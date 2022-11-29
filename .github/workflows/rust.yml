@@ -20,7 +20,7 @@ jobs:
       run: | 
        sudo apt update -y
        sudo apt upgrade -y
-       sudo apt install wayland-protocols libuwac0-dev libwayland-dev -y
+       sudo apt install wayland-protocols libuwac0-dev libwayland-dev libasound2-dev -y
     - name: Build
       run: cargo build --verbose
     - name: Run tests
