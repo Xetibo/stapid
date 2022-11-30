@@ -1,29 +1,42 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-#[derive(Component)]
-struct Player {
-    pos_x: f32,
-    pos_y: f32,
-    speed: f32,
+use std::f32::consts::PI;
+
+use bevy::{prelude::*,sprite::MaterialMesh2dBundle};
+use bevy_inspector_egui::{Inspectable, WorldInspectorPlugin};
+
+#[derive(Component,Inspectable)]
+pub struct Player {
+    pub speed: f32,
+    pub direction: Direction,
 }
 
-#[derive(Component)]
+#[derive(Component, Inspectable)]
+pub struct Bullet {
+    pub speed: f32,
+}
+
+#[derive(Component, Inspectable)]
+pub enum Direction {
+    Up,
+    Down,
+    Right,
+    Left,
+}
+
+#[derive(Component, Inspectable)]
 struct Name(String);
 
 impl Player {
     fn new() -> Player {
         Player {
-            pos_x: 0.0f32,
-            pos_y: 0.0f32,
             speed: 2.5,
+            direction: Direction::Up,
         }
     }
+}
 
-    fn move_player(&mut self, value: f32, direction: bool) {
-        if direction {
-            self.pos_x = value * self.speed;
-        } else {
-            self.pos_y = value * self.speed;
-        }
+impl Bullet {
+    fn new() -> Bullet {
+        Bullet { speed: 10.0 }
     }
 }
 
@@ -38,55 +51,103 @@ fn main() {
             },
             ..default()
         }))
+        .add_plugin(WorldInspectorPlugin::new())
         .add_startup_system(spawn_player)
-        .add_startup_system(display_sprite)
-        // .add_system(move_all_players)
+        .add_startup_system(spawn_camera)
+        .add_system(move_all_players)
+        .add_system(player_shoot)
         .run();
 }
 
-fn spawn_player(mut commands: Commands) {
-    commands.spawn((Player::new(), Name(String::from("PingPang"))));
+fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        Player::new(),
+        SpriteBundle {
+            texture: asset_server.load("../assets/stick.resized.png"),
+            ..default()
+        },
+        Direction::Up,
+        Name(String::from("player1")),
+    ));
+    commands.spawn((
+        Player::new(),
+        SpriteBundle {
+            texture: asset_server.load("../assets/stick.resized.png"),
+            ..default()
+        },
+        Direction::Up,
+        Name(String::from("player2")),
+    ));
 }
 
-fn move_all_players(query: Query<&Name, With<Player>>) {
-    for name in query.iter() {
-        println!("{} moved!", name.0);
+fn move_all_players(
+    mut players: Query<(&Player, &mut Transform, &Name)>,
+    timer: Res<Time>,
+    keys: Res<Input<KeyCode>>,
+) {
+    for (player, mut transform, name) in &mut players {
+        if name.0 == String::from("player1") {
+            if keys.pressed(KeyCode::Up) {
+                transform.translation.y += 60. * player.speed * timer.delta_seconds();
+            }
+            if keys.pressed(KeyCode::Down) {
+                transform.translation.y -= 60. * player.speed * timer.delta_seconds();
+            }
+            if keys.pressed(KeyCode::Right) {
+                transform.translation.x += 60. * player.speed * timer.delta_seconds();
+            }
+            if keys.pressed(KeyCode::Left) {
+                transform.translation.x -= 60. * player.speed * timer.delta_seconds();
+            }
+        }
+        if name.0 == String::from("player2") {
+            if keys.pressed(KeyCode::W) {
+                transform.translation.y += 60. * player.speed * timer.delta_seconds();
+            }
+            if keys.pressed(KeyCode::S) {
+                transform.translation.y -= 60. * player.speed * timer.delta_seconds();
+            }
+            if keys.pressed(KeyCode::D) {
+                transform.translation.x += 60. * player.speed * timer.delta_seconds();
+            }
+            if keys.pressed(KeyCode::A) {
+                transform.translation.x -= 60. * player.speed * timer.delta_seconds();
+            }
+        }
+        // match player.direction {
+        //     Direction::Up => transform.translation.y += 30. * player.speed * timer.delta_seconds(),
+        //     Direction::Down => transform.translation.y -= 30. * player.speed * timer.delta_seconds(),
+        //     Direction::Right => transform.translation.x += 30. * player.speed * timer.delta_seconds(),
+        //     Direction::Left => transform.translation.x -= 30. * player.speed * timer.delta_seconds(),
+        // }
     }
 }
 
-fn display_sprite(
+fn player_shoot(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    players: Query<(&Player, &Name, &Transform)>,
+    keys: Res<Input<KeyCode>>,
 ) {
+    for (_player, name, transform) in &players {
+        if name.0 == "player1" {
+            if keys.just_pressed(KeyCode::LControl) { 
+                commands
+                    .spawn(MaterialMesh2dBundle {
+                        mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
+                        material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
+                        transform: *transform,
+                        ..default()
+                    })
+                    .insert(Name(String::from("Bullet from player1")));
+            }
+        }
+    }
+}
+
+
+
+fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-    // commands.spawn(SpriteBundle {
-    //     texture: asset_server.load("../assets/stick.png"),
-    //     ..default()
-    // });
-    commands.spawn(SpriteBundle {
-        sprite: Sprite {
-            color: Color::rgb(0.25, 0.5, 0.5),
-            custom_size: Some(Vec2::new(100.0, 100.0)),
-            ..default()
-        },
-        ..default()
-    }); 
-
-    // Circle
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(shape::Circle::new(50.).into()).into(),
-        material: materials.add(ColorMaterial::from(Color::PURPLE)),
-        transform: Transform::from_translation(Vec3::new(-100., 0., 0.)),
-        ..default()
-    });
-
-    // Hexagon
-    commands.spawn(MaterialMesh2dBundle {
-        mesh: meshes.add(shape::RegularPolygon::new(50., 6).into()).into(),
-        material: materials.add(ColorMaterial::from(Color::TURQUOISE)),
-        transform: Transform::from_translation(Vec3::new(100., 0., 0.)),
-        ..default()
-    });
 }
