@@ -5,8 +5,14 @@ use std::time::Duration;
 const WALL_THICKNESS: f32 = 10.0;
 const WALL_TOP: f32 = -500.0;
 const WALL_BOTTOM: f32 = 500.0;
-const WALL_LEFT: f32 = -500.0;
-const WALL_RIGHT: f32 = 500.0;
+const WALL_LEFT: f32 = -800.0;
+const WALL_RIGHT: f32 = 800.0;
+const PLAYER_PADDING: f32 = 10.0;
+const PLAYER_SIZE: f32 = 50.0;
+const LEFT_BOUND: f32 = WALL_LEFT + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
+const RIGHT_BOUND: f32 = WALL_RIGHT + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
+const TOP_BOUND: f32 = WALL_TOP + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
+const BOTTOM_BOUND: f32 = WALL_BOTTOM + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 
 #[derive(Component, Inspectable)]
 pub struct Player {
@@ -136,13 +142,13 @@ impl Wall {
                     },
                     scale: match entered_direction {
                         Direction::Up | Direction::Down => Vec3 {
-                            x: 1000.0,
+                            x: 1610.0,
                             y: WALL_THICKNESS,
                             z: (1.0),
                         },
                         Direction::Right | Direction::Left => Vec3 {
                             x: WALL_THICKNESS,
-                            y: 1000.0,
+                            y: 1010.0,
                             z: (1.0),
                         },
                     },
@@ -207,8 +213,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
                     z: 0.0,
                 },
                 scale: Vec3 {
-                    x: 50.0,
-                    y: 50.0,
+                    x: PLAYER_SIZE,
+                    y: PLAYER_SIZE,
                     z: 0.0,
                 },
                 ..default()
@@ -241,8 +247,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
                     z: 0.0,
                 },
                 scale: Vec3 {
-                    x: 50.0,
-                    y: 50.0,
+                    x: PLAYER_SIZE,
+                    y: PLAYER_SIZE,
                     z: 0.0,
                 },
                 ..default()
@@ -255,36 +261,20 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
-fn move_all_bullets(
-    mut commands: Commands,
-    mut bullets: Query<(&Bullet, &mut Transform, Entity)>,
-    timer: Res<Time>,
-) {
-    for (bullet, mut transform, entity) in &mut bullets {
+fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>, timer: Res<Time>) {
+    for (bullet, mut transform) in &mut bullets {
         match bullet.direction {
             Direction::Up => {
                 transform.translation.y += 50. * bullet.speed * timer.delta_seconds();
-                if transform.translation.y > 1000.0 {
-                    commands.entity(entity).despawn();
-                }
             }
             Direction::Down => {
                 transform.translation.y -= 50. * bullet.speed * timer.delta_seconds();
-                if transform.translation.y < -1000.0 {
-                    commands.entity(entity).despawn();
-                }
             }
             Direction::Right => {
                 transform.translation.x += 50. * bullet.speed * timer.delta_seconds();
-                if transform.translation.x > 1000.0 {
-                    commands.entity(entity).despawn();
-                }
             }
             Direction::Left => {
                 transform.translation.x -= 50. * bullet.speed * timer.delta_seconds();
-                if transform.translation.x < -1000.0 {
-                    commands.entity(entity).despawn();
-                }
             }
         }
     }
@@ -350,19 +340,23 @@ fn move_all_players(
 ) {
     for (mut player, mut transform) in &mut players {
         if keys.pressed(player.bindings.up) {
-            transform.translation.y += 80. * player.speed * timer.delta_seconds();
+            let new_position = transform.translation.y + 80. * player.speed * timer.delta_seconds();
+            transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
             player.direction = Direction::Up;
         }
         if keys.pressed(player.bindings.down) {
-            transform.translation.y -= 80. * player.speed * timer.delta_seconds();
+            let new_position = transform.translation.y - 80. * player.speed * timer.delta_seconds();
+            transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
             player.direction = Direction::Down;
         }
         if keys.pressed(player.bindings.right) {
-            transform.translation.x += 80. * player.speed * timer.delta_seconds();
+            let new_position = transform.translation.x + 80. * player.speed * timer.delta_seconds();
+            transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
             player.direction = Direction::Right;
         }
         if keys.pressed(player.bindings.left) {
-            transform.translation.x -= 80. * player.speed * timer.delta_seconds();
+            let new_position = transform.translation.x - 80. * player.speed * timer.delta_seconds();
+            transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
             player.direction = Direction::Left;
         }
     }
