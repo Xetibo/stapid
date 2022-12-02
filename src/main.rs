@@ -305,6 +305,7 @@ fn collision_bullet(
                 transform.scale.truncate(),
             );
             if collision.is_some() {
+                commands.entity(bullet_entity).despawn();
                 if maybe_player.is_some() {
                     let player = &mut **maybe_player.as_mut().unwrap();
                     if player.invulnerable == false {
@@ -319,9 +320,6 @@ fn collision_bullet(
                             commands.entity(collider_entity).despawn();
                         }
                     }
-                } else {
-                    // despawn if hit something other than player
-                    commands.entity(bullet_entity).despawn();
                 }
             }
         }
