@@ -9,9 +9,9 @@ const WALL_LEFT: f32 = -800.0;
 const WALL_RIGHT: f32 = 800.0;
 const PLAYER_PADDING: f32 = 10.0;
 const PLAYER_SIZE: f32 = 50.0;
-const LEFT_BOUND: f32 = WALL_LEFT + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
+const LEFT_BOUND: f32 = WALL_LEFT + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 const RIGHT_BOUND: f32 = WALL_RIGHT + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
-const TOP_BOUND: f32 = WALL_TOP + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
+const TOP_BOUND: f32 = WALL_TOP + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 const BOTTOM_BOUND: f32 = WALL_BOTTOM + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 
 #[derive(Component, Inspectable)]
@@ -19,6 +19,7 @@ pub struct Player {
     pub size: i32,
     pub lifes: i32,
     pub invulnerable: bool,
+    pub stunned: bool,
     pub speed: f32,
     pub direction: Direction,
     pub name: String,
@@ -27,8 +28,21 @@ pub struct Player {
 
 #[derive(Component, Inspectable)]
 pub struct Bullet {
+    pub bullet_type: BulletType,
     pub speed: f32,
+    pub area_of_effect: f32,
+    pub stuns: bool,
+    pub bounces: bool,
     pub direction: Direction,
+    pub color: Color,
+}
+
+#[derive(Component, Inspectable)]
+pub enum BulletType {
+    NormalBullet,
+    IceBullet,
+    ExplosiveBullet,
+    BouncyBullet,
 }
 
 #[derive(Bundle)]
@@ -63,6 +77,8 @@ pub struct Bindings {
     #[inspectable(ignore)]
     pub shoot: KeyCode,
     #[inspectable(ignore)]
+    pub shoot_special: KeyCode,
+    #[inspectable(ignore)]
     pub up: KeyCode,
     #[inspectable(ignore)]
     pub down: KeyCode,
@@ -76,6 +92,7 @@ impl Player {
     fn new(
         entered_name: String,
         entered_shootbind: KeyCode,
+        entered_shoot_specialbind: KeyCode,
         entered_upbind: KeyCode,
         entered_downbind: KeyCode,
         entered_rightbind: KeyCode,
@@ -85,11 +102,13 @@ impl Player {
             size: 50,
             lifes: 3,
             invulnerable: false,
+            stunned: false,
             speed: 2.5,
             direction: Direction::Up,
             name: entered_name,
             bindings: Bindings {
                 shoot: entered_shootbind,
+                shoot_special: entered_shoot_specialbind,
                 up: entered_upbind,
                 down: entered_downbind,
                 right: entered_rightbind,
@@ -104,10 +123,51 @@ impl Player {
 }
 
 impl Bullet {
-    fn new(direction_entered: Direction) -> Bullet {
+    fn normal_bullet(direction_entered: Direction) -> Bullet {
         Bullet {
+            bullet_type: BulletType::NormalBullet,
             speed: 10.0,
+            area_of_effect: 1.0,
+            stuns: false,
+            bounces: false,
             direction: direction_entered,
+            color: Color::rgb(1.0, 0.0, 0.0),
+        }
+    }
+
+    fn ice_bullet(direction_entered: Direction) -> Bullet {
+        Bullet {
+            bullet_type: BulletType::IceBullet,
+            speed: 12.0,
+            area_of_effect: 1.0,
+            stuns: true,
+            bounces: false,
+            direction: direction_entered,
+            color: Color::rgb(0.0, 0.0, 1.0),
+        }
+    }
+
+    fn explosive_bullet(direction_entered: Direction) -> Bullet {
+        Bullet {
+            bullet_type: BulletType::ExplosiveBullet,
+            speed: 5.0,
+            area_of_effect: 5.0,
+            stuns: false,
+            bounces: false,
+            direction: direction_entered,
+            color: Color::rgb(1.0, 1.0, 0.0),
+        }
+    }
+
+    fn bouncy_bullet(direction_entered: Direction) -> Bullet {
+        Bullet {
+            bullet_type: BulletType::BouncyBullet,
+            speed: 8.0,
+            area_of_effect: 1.0,
+            stuns: false,
+            bounces: true,
+            direction: direction_entered,
+            color: Color::rgb(0.0, 1.0, 0.0),
         }
     }
 }
@@ -195,6 +255,7 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         Player::new(
             String::from("player1"),
             KeyCode::LControl,
+            KeyCode::LShift,
             KeyCode::W,
             KeyCode::S,
             KeyCode::D,
@@ -229,6 +290,7 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         Player::new(
             String::from("player2"),
             KeyCode::RControl,
+            KeyCode::RShift,
             KeyCode::Up,
             KeyCode::Down,
             KeyCode::Right,
@@ -282,10 +344,10 @@ fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>, timer: Res<Ti
 
 fn collision_bullet(
     mut commands: Commands,
-    bullet_query: Query<(Entity, &Transform), With<Bullet>>,
+    mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
     mut collider_query: Query<(Entity, &Transform, Option<&mut Player>), With<Collider>>,
 ) {
-    for (bullet_entity, bullet_transform) in &bullet_query {
+    for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
         let bullet_size = bullet_transform.scale.truncate();
         for (collider_entity, transform, mut maybe_player) in &mut collider_query {
             let collision = collide(
@@ -295,19 +357,59 @@ fn collision_bullet(
                 transform.scale.truncate(),
             );
             if collision.is_some() {
-                commands.entity(bullet_entity).despawn();
-                if maybe_player.is_some() {
-                    let player = &mut **maybe_player.as_mut().unwrap();
-                    if player.invulnerable == false {
-                        if player.lifes > 1 {
-                            player.decrement_life();
-                            player.invulnerable = true;
-                            commands.spawn((HitCooldownTimer {
-                                timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
-                                associated_player: player.name.clone(),
-                            },));
-                        } else {
-                            commands.entity(collider_entity).despawn();
+                match bullet.bullet_type {
+                    BulletType::NormalBullet => {
+                        commands.entity(bullet_entity).despawn();
+                        if maybe_player.is_some() {
+                            let player = &mut **maybe_player.as_mut().unwrap();
+                            if player.invulnerable == false {
+                                if player.lifes > 1 {
+                                    player.decrement_life();
+                                    player.invulnerable = true;
+                                    commands.spawn((HitCooldownTimer {
+                                        timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                        associated_player: player.name.clone(),
+                                    },));
+                                } else {
+                                    commands.entity(collider_entity).despawn();
+                                }
+                            }
+                        }
+                    }
+                    BulletType::IceBullet => {
+                        commands.entity(bullet_entity).despawn();
+                        if maybe_player.is_some() {
+                            let player = &mut **maybe_player.as_mut().unwrap();
+                            if player.invulnerable == false && player.stunned == false {
+                                player.stunned = true;
+                                commands.spawn((HitCooldownTimer {
+                                    timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                    associated_player: player.name.clone(),
+                                },));
+                            }
+                        }
+                    }
+                    BulletType::ExplosiveBullet => {
+                        // will be added later
+                        commands.entity(bullet_entity).despawn();
+                    }
+                    BulletType::BouncyBullet => {
+                        bullet.direction = get_inverse_direction(bullet.direction.clone());
+                        if maybe_player.is_some() {
+                            let player = &mut **maybe_player.as_mut().unwrap();
+                            if player.invulnerable == false {
+                                if player.lifes > 1 {
+                                    commands.entity(bullet_entity).despawn();
+                                    player.decrement_life();
+                                    player.invulnerable = true;
+                                    commands.spawn((HitCooldownTimer {
+                                        timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                        associated_player: player.name.clone(),
+                                    },));
+                                } else {
+                                    commands.entity(collider_entity).despawn();
+                                }
+                            }
                         }
                     }
                 }
@@ -325,8 +427,18 @@ fn tick_timer(
     for (entity, mut hit_timer) in &mut timer_query {
         hit_timer.timer.tick(time.delta());
         for mut player in &mut player_query {
-            if hit_timer.timer.finished() && hit_timer.associated_player == player.name {
+            if hit_timer.timer.finished()
+                && hit_timer.associated_player == player.name
+                && player.invulnerable == true
+            {
                 player.invulnerable = false;
+                commands.entity(entity).despawn();
+            }
+            if hit_timer.timer.finished()
+                && hit_timer.associated_player == player.name
+                && player.stunned == true
+            {
+                player.stunned = false;
                 commands.entity(entity).despawn();
             }
         }
@@ -339,25 +451,31 @@ fn move_all_players(
     keys: Res<Input<KeyCode>>,
 ) {
     for (mut player, mut transform) in &mut players {
-        if keys.pressed(player.bindings.up) {
-            let new_position = transform.translation.y + 80. * player.speed * timer.delta_seconds();
-            transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
-            player.direction = Direction::Up;
-        }
-        if keys.pressed(player.bindings.down) {
-            let new_position = transform.translation.y - 80. * player.speed * timer.delta_seconds();
-            transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
-            player.direction = Direction::Down;
-        }
-        if keys.pressed(player.bindings.right) {
-            let new_position = transform.translation.x + 80. * player.speed * timer.delta_seconds();
-            transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
-            player.direction = Direction::Right;
-        }
-        if keys.pressed(player.bindings.left) {
-            let new_position = transform.translation.x - 80. * player.speed * timer.delta_seconds();
-            transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
-            player.direction = Direction::Left;
+        if player.stunned == false {
+            if keys.pressed(player.bindings.up) {
+                let new_position =
+                    transform.translation.y + 80. * player.speed * timer.delta_seconds();
+                transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
+                player.direction = Direction::Up;
+            }
+            if keys.pressed(player.bindings.down) {
+                let new_position =
+                    transform.translation.y - 80. * player.speed * timer.delta_seconds();
+                transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
+                player.direction = Direction::Down;
+            }
+            if keys.pressed(player.bindings.right) {
+                let new_position =
+                    transform.translation.x + 80. * player.speed * timer.delta_seconds();
+                transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
+                player.direction = Direction::Right;
+            }
+            if keys.pressed(player.bindings.left) {
+                let new_position =
+                    transform.translation.x - 80. * player.speed * timer.delta_seconds();
+                transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
+                player.direction = Direction::Left;
+            }
         }
     }
 }
@@ -370,85 +488,43 @@ fn player_shoot(
     keys: Res<Input<KeyCode>>,
 ) {
     for (player, transform) in &players {
-        if keys.just_pressed(player.bindings.shoot) {
-            match player.direction {
-                Direction::Up => {
-                    commands.spawn((
-                        Bullet::new(player.direction.clone()),
-                        MaterialMesh2dBundle {
-                            mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
-                            material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                            transform: Transform::from_translation(
-                                transform.translation
-                                    + Vec3 {
-                                        x: 0.0,
-                                        y: 50.0,
-                                        z: 0.0,
-                                    },
-                            ),
-                            ..default()
-                        },
-                        Name(String::from("Bullet from player1")),
-                    ));
-                }
-                Direction::Down => {
-                    commands.spawn((
-                        Bullet::new(player.direction.clone()),
-                        MaterialMesh2dBundle {
-                            mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
-                            material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                            transform: Transform::from_translation(
-                                transform.translation
-                                    + Vec3 {
-                                        x: 0.0,
-                                        y: -50.0,
-                                        z: 0.0,
-                                    },
-                            ),
-                            ..default()
-                        },
-                        Name(String::from("Bullet from player1")),
-                    ));
-                }
-                Direction::Right => {
-                    commands.spawn((
-                        Bullet::new(player.direction.clone()),
-                        MaterialMesh2dBundle {
-                            mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
-                            material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                            transform: Transform::from_translation(
-                                transform.translation
-                                    + Vec3 {
-                                        x: 50.0,
-                                        y: 0.0,
-                                        z: 0.0,
-                                    },
-                            ),
-                            ..default()
-                        },
-                        Name(String::from("Bullet from player1")),
-                    ));
-                }
-                Direction::Left => {
-                    commands.spawn((
-                        Bullet::new(player.direction.clone()),
-                        MaterialMesh2dBundle {
-                            mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
-                            material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                            transform: Transform::from_translation(
-                                transform.translation
-                                    + Vec3 {
-                                        x: -50.0,
-                                        y: 0.0,
-                                        z: 0.0,
-                                    },
-                            ),
-                            ..default()
-                        },
-                        Name(String::from("Bullet from player1")),
-                    ));
-                }
-            }
+        if keys.just_pressed(player.bindings.shoot) && player.stunned == false {
+            let (bullet_x, bullet_y) = get_bullet_spawn_position(&player.direction);
+            commands.spawn((
+                Bullet::normal_bullet(player.direction.clone()),
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
+                    material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
+                    transform: Transform::from_translation(
+                        transform.translation
+                            + Vec3 {
+                                x: bullet_x,
+                                y: bullet_y,
+                                z: 0.0,
+                            },
+                    ),
+                    ..default()
+                },
+            ));
+        }
+        if keys.just_pressed(player.bindings.shoot_special) && player.stunned == false {
+            let (bullet_x, bullet_y) = get_bullet_spawn_position(&player.direction);
+            commands.spawn((
+                Bullet::ice_bullet(player.direction.clone()),
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
+                    material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
+                    transform: Transform::from_translation(
+                        transform.translation
+                            + Vec3 {
+                                x: bullet_x,
+                                y: bullet_y,
+                                z: 0.0,
+                            },
+                    ),
+                    ..default()
+                },
+            ));
         }
     }
 }
@@ -462,4 +538,22 @@ fn spawn_walls(mut commands: Commands) {
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+}
+
+fn get_inverse_direction(direction: Direction) -> Direction {
+    match direction {
+        Direction::Up => Direction::Down,
+        Direction::Down => Direction::Up,
+        Direction::Right => Direction::Left,
+        Direction::Left => Direction::Right,
+    }
+}
+
+fn get_bullet_spawn_position(direction: &Direction) -> (f32, f32) {
+    match direction {
+        Direction::Up => (0.0, 30.0),
+        Direction::Down => (0.0, -30.0),
+        Direction::Right => (30.0, 0.0),
+        Direction::Left => (-30.0, 0.0),
+    }
 }
