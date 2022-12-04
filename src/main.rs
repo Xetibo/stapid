@@ -2,6 +2,14 @@ use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::MaterialMesh2dBund
 use bevy_inspector_egui::{Inspectable, RegisterInspectable, WorldInspectorPlugin};
 use std::time::Duration;
 
+pub mod game_utils;
+use crate::game_utils::{
+    Bindings, BulletType, Collider, Direction, HitCooldownTimer, Name, TimerType,
+};
+
+pub mod game_objects;
+use crate::game_objects::{Bullet, Player, Wall};
+
 const WALL_THICKNESS: f32 = 10.0;
 const WALL_TOP: f32 = -500.0;
 const WALL_BOTTOM: f32 = 500.0;
@@ -14,87 +22,6 @@ const LEFT_BOUND: f32 =
 const RIGHT_BOUND: f32 = WALL_RIGHT + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 const TOP_BOUND: f32 = WALL_TOP + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 const BOTTOM_BOUND: f32 = WALL_BOTTOM + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
-
-#[derive(Component, Inspectable)]
-pub struct Player {
-    pub size: i32,
-    pub lifes: i32,
-    pub invulnerable: bool,
-    pub stunned: bool,
-    pub speed: f32,
-    pub direction: Direction,
-    pub name: String,
-    pub bindings: Bindings,
-}
-
-#[derive(Component, Inspectable)]
-pub struct Bullet {
-    pub bullet_type: BulletType,
-    pub speed: f32,
-    pub area_of_effect: f32,
-    pub stuns: bool,
-    pub bounces: bool,
-    pub direction: Direction,
-    pub color: Color,
-}
-
-#[derive(Component, Inspectable)]
-pub enum BulletType {
-    NormalBullet,
-    IceBullet,
-    ExplosiveBullet,
-    BouncyBullet,
-}
-
-#[derive(Bundle)]
-struct Wall {
-    direction: Direction,
-    sprite_bundle: SpriteBundle,
-    collider: Collider,
-}
-
-#[derive(Component, Inspectable, Clone)]
-pub enum Direction {
-    Up,
-    Down,
-    Right,
-    Left,
-}
-
-#[derive(Component, Inspectable, Clone)]
-pub enum TimerType {
-    Invulnerable,
-    Stun,
-}
-
-#[derive(Component, Inspectable)]
-struct Name(String);
-
-#[derive(Component)]
-struct Collider;
-
-#[derive(Component)]
-struct HitCooldownTimer {
-    timer: Timer,
-    associated_player: String,
-    timer_type: TimerType,
-}
-
-#[derive(Component, Inspectable)]
-pub struct Bindings {
-    #[inspectable(ignore)]
-    pub shoot: KeyCode,
-    #[inspectable(ignore)]
-    pub shoot_special: KeyCode,
-    #[inspectable(ignore)]
-    pub up: KeyCode,
-    #[inspectable(ignore)]
-    pub down: KeyCode,
-    #[inspectable(ignore)]
-    pub right: KeyCode,
-    #[inspectable(ignore)]
-    pub left: KeyCode,
-}
 
 impl Player {
     fn new(
@@ -292,7 +219,7 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         Collider,
         Direction::Up,
-        Name(String::from("player1")),
+        Name::new(String::from("player1")),
     ));
     commands.spawn((
         Player::new(
@@ -327,7 +254,7 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         Collider,
         Direction::Up,
-        Name(String::from("player2")),
+        Name::new(String::from("player2")),
     ));
 }
 
