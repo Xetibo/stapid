@@ -9,7 +9,8 @@ const WALL_LEFT: f32 = -800.0;
 const WALL_RIGHT: f32 = 800.0;
 const PLAYER_PADDING: f32 = 10.0;
 const PLAYER_SIZE: f32 = 50.0;
-const LEFT_BOUND: f32 = WALL_LEFT + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
+const LEFT_BOUND: f32 =
+    WALL_LEFT + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 const RIGHT_BOUND: f32 = WALL_RIGHT + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 const TOP_BOUND: f32 = WALL_TOP + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
 const BOTTOM_BOUND: f32 = WALL_BOTTOM + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
@@ -60,6 +61,12 @@ pub enum Direction {
     Left,
 }
 
+#[derive(Component, Inspectable, Clone)]
+pub enum TimerType {
+    Invulnerable,
+    Stun,
+}
+
 #[derive(Component, Inspectable)]
 struct Name(String);
 
@@ -70,6 +77,7 @@ struct Collider;
 struct HitCooldownTimer {
     timer: Timer,
     associated_player: String,
+    timer_type: TimerType,
 }
 
 #[derive(Component, Inspectable)]
@@ -365,10 +373,12 @@ fn collision_bullet(
                             if player.invulnerable == false {
                                 if player.lifes > 1 {
                                     player.decrement_life();
+                                    player.stunned = false;
                                     player.invulnerable = true;
                                     commands.spawn((HitCooldownTimer {
                                         timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
                                         associated_player: player.name.clone(),
+                                        timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
                                     commands.entity(collider_entity).despawn();
@@ -385,6 +395,7 @@ fn collision_bullet(
                                 commands.spawn((HitCooldownTimer {
                                     timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
                                     associated_player: player.name.clone(),
+                                    timer_type: TimerType::Stun,
                                 },));
                             }
                         }
@@ -401,10 +412,12 @@ fn collision_bullet(
                                 if player.lifes > 1 {
                                     commands.entity(bullet_entity).despawn();
                                     player.decrement_life();
+                                    player.stunned = false;
                                     player.invulnerable = true;
                                     commands.spawn((HitCooldownTimer {
                                         timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
                                         associated_player: player.name.clone(),
+                                        timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
                                     commands.entity(collider_entity).despawn();
@@ -427,19 +440,17 @@ fn tick_timer(
     for (entity, mut hit_timer) in &mut timer_query {
         hit_timer.timer.tick(time.delta());
         for mut player in &mut player_query {
-            if hit_timer.timer.finished()
-                && hit_timer.associated_player == player.name
-                && player.invulnerable == true
-            {
-                player.invulnerable = false;
-                commands.entity(entity).despawn();
-            }
-            if hit_timer.timer.finished()
-                && hit_timer.associated_player == player.name
-                && player.stunned == true
-            {
-                player.stunned = false;
-                commands.entity(entity).despawn();
+            if hit_timer.timer.finished() && hit_timer.associated_player == player.name {
+                match hit_timer.timer_type {
+                    TimerType::Stun => {
+                        player.stunned = false;
+                        commands.entity(entity).despawn();
+                    }
+                    TimerType::Invulnerable => {
+                        player.invulnerable = false;
+                        commands.entity(entity).despawn();
+                    }
+                }
             }
         }
     }
