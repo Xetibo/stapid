@@ -1,5 +1,5 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::MaterialMesh2dBundle};
-use bevy_inspector_egui::{Inspectable, RegisterInspectable, WorldInspectorPlugin};
+use bevy::prelude::*;
+use bevy_inspector_egui::Inspectable;
 
 #[derive(Component, Inspectable, Clone)]
 pub enum Direction {
@@ -7,6 +7,16 @@ pub enum Direction {
     Down,
     Right,
     Left,
+}
+impl Direction {
+    pub fn opposite(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Right => Direction::Left,
+            Direction::Left => Direction::Right,
+        }
+    }
 }
 
 #[derive(Component, Inspectable)]

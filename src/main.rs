@@ -1,164 +1,16 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::MaterialMesh2dBundle};
-use bevy_inspector_egui::{Inspectable, RegisterInspectable, WorldInspectorPlugin};
+use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
+use constants::PLAYER_SIZE;
 use std::time::Duration;
 
 pub mod game_utils;
-use crate::game_utils::{
-    Bindings, BulletType, Collider, Direction, HitCooldownTimer, Name, TimerType,
-};
+use crate::game_utils::{BulletType, Collider, Direction, HitCooldownTimer, Name, TimerType};
 
 pub mod game_objects;
 use crate::game_objects::{Bullet, Player, Wall};
 
-const WALL_THICKNESS: f32 = 10.0;
-const WALL_TOP: f32 = -500.0;
-const WALL_BOTTOM: f32 = 500.0;
-const WALL_LEFT: f32 = -800.0;
-const WALL_RIGHT: f32 = 800.0;
-const PLAYER_PADDING: f32 = 10.0;
-const PLAYER_SIZE: f32 = 50.0;
-const LEFT_BOUND: f32 =
-    WALL_LEFT + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
-const RIGHT_BOUND: f32 = WALL_RIGHT + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
-const TOP_BOUND: f32 = WALL_TOP + 60.0 + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
-const BOTTOM_BOUND: f32 = WALL_BOTTOM + WALL_THICKNESS / 2.0 - PLAYER_SIZE / 2.0 - PLAYER_PADDING;
-
-impl Player {
-    fn new(
-        entered_name: String,
-        entered_shootbind: KeyCode,
-        entered_shoot_specialbind: KeyCode,
-        entered_upbind: KeyCode,
-        entered_downbind: KeyCode,
-        entered_rightbind: KeyCode,
-        entered_leftbind: KeyCode,
-    ) -> Player {
-        Player {
-            size: 50,
-            lifes: 3,
-            invulnerable: false,
-            stunned: false,
-            speed: 2.5,
-            direction: Direction::Up,
-            name: entered_name,
-            bindings: Bindings {
-                shoot: entered_shootbind,
-                shoot_special: entered_shoot_specialbind,
-                up: entered_upbind,
-                down: entered_downbind,
-                right: entered_rightbind,
-                left: entered_leftbind,
-            },
-        }
-    }
-
-    fn decrement_life(&mut self) {
-        self.lifes -= 1;
-    }
-}
-
-impl Bullet {
-    fn normal_bullet(direction_entered: Direction) -> Bullet {
-        Bullet {
-            bullet_type: BulletType::NormalBullet,
-            speed: 10.0,
-            area_of_effect: 1.0,
-            stuns: false,
-            bounces: false,
-            direction: direction_entered,
-            color: Color::rgb(1.0, 0.0, 0.0),
-        }
-    }
-
-    fn ice_bullet(direction_entered: Direction) -> Bullet {
-        Bullet {
-            bullet_type: BulletType::IceBullet,
-            speed: 12.0,
-            area_of_effect: 1.0,
-            stuns: true,
-            bounces: false,
-            direction: direction_entered,
-            color: Color::rgb(0.0, 0.0, 1.0),
-        }
-    }
-
-    fn explosive_bullet(direction_entered: Direction) -> Bullet {
-        Bullet {
-            bullet_type: BulletType::ExplosiveBullet,
-            speed: 5.0,
-            area_of_effect: 5.0,
-            stuns: false,
-            bounces: false,
-            direction: direction_entered,
-            color: Color::rgb(1.0, 1.0, 0.0),
-        }
-    }
-
-    fn bouncy_bullet(direction_entered: Direction) -> Bullet {
-        Bullet {
-            bullet_type: BulletType::BouncyBullet,
-            speed: 8.0,
-            area_of_effect: 1.0,
-            stuns: false,
-            bounces: true,
-            direction: direction_entered,
-            color: Color::rgb(0.0, 1.0, 0.0),
-        }
-    }
-}
-
-impl Wall {
-    fn new(entered_direction: Direction) -> Wall {
-        Wall {
-            direction: entered_direction.clone(),
-            sprite_bundle: SpriteBundle {
-                transform: Transform {
-                    translation: match entered_direction {
-                        Direction::Up => Vec3 {
-                            x: 0.0,
-                            y: WALL_TOP,
-                            z: (0.0),
-                        },
-                        Direction::Down => Vec3 {
-                            x: 0.0,
-                            y: WALL_BOTTOM,
-                            z: (0.0),
-                        },
-                        Direction::Right => Vec3 {
-                            x: WALL_RIGHT,
-                            y: 0.0,
-                            z: (0.0),
-                        },
-                        Direction::Left => Vec3 {
-                            x: WALL_LEFT,
-                            y: 0.0,
-                            z: (0.0),
-                        },
-                    },
-                    scale: match entered_direction {
-                        Direction::Up | Direction::Down => Vec3 {
-                            x: 1610.0,
-                            y: WALL_THICKNESS,
-                            z: (1.0),
-                        },
-                        Direction::Right | Direction::Left => Vec3 {
-                            x: WALL_THICKNESS,
-                            y: 1010.0,
-                            z: (1.0),
-                        },
-                    },
-                    ..default()
-                },
-                sprite: Sprite {
-                    color: Color::rgb(1.0, 0.0, 0.0),
-                    ..default()
-                },
-                ..default()
-            },
-            collider: Collider {},
-        }
-    }
-}
+pub mod constants;
+use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, RIGHT_BOUND, TOP_BOUND};
 
 fn main() {
     App::new()
@@ -332,7 +184,7 @@ fn collision_bullet(
                         commands.entity(bullet_entity).despawn();
                     }
                     BulletType::BouncyBullet => {
-                        bullet.direction = get_inverse_direction(bullet.direction.clone());
+                        bullet.direction = bullet.direction.opposite();
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
@@ -427,7 +279,7 @@ fn player_shoot(
 ) {
     for (player, transform) in &players {
         if keys.just_pressed(player.bindings.shoot) && player.stunned == false {
-            let (bullet_x, bullet_y) = get_bullet_spawn_position(&player.direction);
+            let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
                 Bullet::normal_bullet(player.direction.clone()),
                 MaterialMesh2dBundle {
@@ -446,7 +298,7 @@ fn player_shoot(
             ));
         }
         if keys.just_pressed(player.bindings.shoot_special) && player.stunned == false {
-            let (bullet_x, bullet_y) = get_bullet_spawn_position(&player.direction);
+            let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
                 Bullet::ice_bullet(player.direction.clone()),
                 MaterialMesh2dBundle {
@@ -476,22 +328,4 @@ fn spawn_walls(mut commands: Commands) {
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-}
-
-fn get_inverse_direction(direction: Direction) -> Direction {
-    match direction {
-        Direction::Up => Direction::Down,
-        Direction::Down => Direction::Up,
-        Direction::Right => Direction::Left,
-        Direction::Left => Direction::Right,
-    }
-}
-
-fn get_bullet_spawn_position(direction: &Direction) -> (f32, f32) {
-    match direction {
-        Direction::Up => (0.0, 30.0),
-        Direction::Down => (0.0, -30.0),
-        Direction::Right => (30.0, 0.0),
-        Direction::Left => (-30.0, 0.0),
-    }
 }
