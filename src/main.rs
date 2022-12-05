@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::MaterialMesh2dBundle};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use constants::PLAYER_SIZE;
-use game_objects::PowerUp;
+use game_objects::{PowerUp, Explosion};
 use rand::prelude::*;
 use std::time::Duration;
 
@@ -36,7 +36,8 @@ fn main() {
         .add_system(player_shoot)
         .add_system(move_all_bullets)
         .add_system(collision_bullet)
-        .add_system(collision_player)
+        .add_system(collision_powerup)
+        .add_system(collision_explosion)
         .add_system(tick_timer)
         .run();
 }
@@ -135,6 +136,8 @@ fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>, timer: Res<Ti
 
 fn collision_bullet(
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
     mut collider_query: Query<(Entity, &Transform, Option<&mut Player>), With<Collider>>,
 ) {
@@ -184,8 +187,21 @@ fn collision_bullet(
                         }
                     }
                     BulletType::ExplosiveBullet => {
-                        // will be added later
                         commands.entity(bullet_entity).despawn();
+                        commands.spawn((
+                            Explosion {
+                                radius: 50.0,
+                            },
+                            MaterialMesh2dBundle {
+                                mesh: meshes.add(shape::Circle::new(50.0).into()).into(),
+                                material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
+                                transform: Transform::from_translation(
+                                    bullet_transform.translation
+                                ),
+                                ..default()
+                            },
+                            Collider,
+                        ));
                     }
                     BulletType::BouncyBullet => {
                         bullet.direction = bullet.direction.opposite();
@@ -214,7 +230,7 @@ fn collision_bullet(
     }
 }
 
-fn collision_player(
+fn collision_powerup(
     mut commands: Commands,
     mut player_query: Query<(&Transform, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &PowerUp), With<Collider>>,
@@ -225,10 +241,6 @@ fn collision_player(
                 transform.translation,
                 transform.scale.truncate(),
                 player_transform.translation,
-                // Vec2 {
-                //     x: PLAYER_SIZE,
-                //     y: PLAYER_SIZE,
-                // },
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
@@ -238,6 +250,34 @@ fn collision_player(
                 player.power_up_type = BulletType::convert_int(bullet_random);
                 commands.entity(collider_entity).despawn();
             }
+        }
+    }
+}
+
+fn collision_explosion(
+    mut commands: Commands,
+    mut player_query: Query<(Entity, &Transform, &mut Player)>,
+    mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
+) {
+    for (player_entity, player_transform, mut player) in &mut player_query {
+        for (collider_entity, transform, explosion) in &mut collider_query {
+            let collision = collide(
+                transform.translation,
+                Vec2 {
+                    x: explosion.radius,
+                    y: explosion.radius,
+                },
+                player_transform.translation,
+                player_transform.scale.truncate(),
+            );
+            if collision.is_some() {
+                if player.lifes > 2 {
+                player.lifes -= 2;
+                } else {
+                commands.entity(player_entity).despawn();
+                }
+            }
+            commands.entity(collider_entity).despawn();
         }
     }
 }

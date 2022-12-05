@@ -31,6 +31,11 @@ pub struct Bullet {
 }
 
 #[derive(Component, Inspectable)]
+pub struct Explosion {
+    pub radius: f32,
+}
+
+#[derive(Component, Inspectable)]
 pub struct PowerUp {
     pub pickup_type: BulletType,
 }
