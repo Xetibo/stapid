@@ -3,6 +3,7 @@ use bevy_inspector_egui::Inspectable;
 
 use crate::constants::{WALL_BOTTOM, WALL_LEFT, WALL_RIGHT, WALL_THICKNESS, WALL_TOP};
 use crate::game_utils::{Bindings, BulletType, Collider, Direction};
+use rand::prelude::*;
 
 #[derive(Component, Inspectable)]
 pub struct Player {
@@ -10,10 +11,12 @@ pub struct Player {
     pub lifes: i32,
     pub invulnerable: bool,
     pub stunned: bool,
+    pub powerup: bool,
     pub speed: f32,
     pub direction: Direction,
     pub name: String,
     pub bindings: Bindings,
+    pub power_up_type: Option<BulletType>,
 }
 
 #[derive(Component, Inspectable)]
@@ -25,6 +28,11 @@ pub struct Bullet {
     pub bounces: bool,
     pub direction: Direction,
     pub color: Color,
+}
+
+#[derive(Component, Inspectable)]
+pub struct PowerUp {
+    pub pickup_type: BulletType,
 }
 
 #[derive(Bundle)]
@@ -49,6 +57,7 @@ impl Player {
             lifes: 3,
             invulnerable: false,
             stunned: false,
+            powerup: false,
             speed: 2.5,
             direction: Direction::Up,
             name: entered_name,
@@ -60,6 +69,7 @@ impl Player {
                 right: entered_rightbind,
                 left: entered_leftbind,
             },
+            power_up_type: None,
         }
     }
 
@@ -78,6 +88,22 @@ impl Player {
 }
 
 impl Bullet {
+    pub fn bullet_from_enum(
+        entered_bullet_type: Option<&BulletType>,
+        direction: &Direction,
+    ) -> Bullet {
+        match entered_bullet_type.unwrap() {
+            bullet_type => {
+                match bullet_type {
+                    BulletType::NormalBullet => Self::normal_bullet(direction.clone()),
+                    BulletType::IceBullet => Self::ice_bullet(direction.clone()),
+                    BulletType::ExplosiveBullet => Self::explosive_bullet(direction.clone()),
+                    BulletType::BouncyBullet => Self::bouncy_bullet(direction.clone()),
+                }
+            }
+        }
+    }
+
     pub fn normal_bullet(direction_entered: Direction) -> Bullet {
         Bullet {
             bullet_type: BulletType::NormalBullet,
@@ -123,6 +149,17 @@ impl Bullet {
             bounces: true,
             direction: direction_entered,
             color: Color::rgb(0.0, 1.0, 0.0),
+        }
+    }
+}
+
+impl PowerUp {
+    pub fn generate_random_position() -> Vec3 {
+        let mut rng = rand::thread_rng();
+        Vec3 {
+            x: rng.gen_range((WALL_LEFT + 10.0)..= (WALL_RIGHT - 10.0)),
+            y: rng.gen_range((WALL_TOP + 10.0)..=(WALL_BOTTOM - 10.0)),
+            z: 0.0,
         }
     }
 }

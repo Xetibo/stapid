@@ -1,6 +1,8 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::MaterialMesh2dBundle};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use constants::PLAYER_SIZE;
+use game_objects::PowerUp;
+use rand::prelude::*;
 use std::time::Duration;
 
 pub mod game_utils;
@@ -29,10 +31,12 @@ fn main() {
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_player)
         .add_startup_system(spawn_camera)
+        .add_system(spawn_powerup)
         .add_system(move_all_players)
         .add_system(player_shoot)
         .add_system(move_all_bullets)
         .add_system(collision_bullet)
+        .add_system(collision_player)
         .add_system(tick_timer)
         .run();
 }
@@ -210,6 +214,34 @@ fn collision_bullet(
     }
 }
 
+fn collision_player(
+    mut commands: Commands,
+    mut player_query: Query<(&Transform, &mut Player)>,
+    mut collider_query: Query<(Entity, &Transform, &PowerUp), With<Collider>>,
+) {
+    for (player_transform, mut player) in &mut player_query {
+        for (collider_entity, transform, _maybe_powerup) in &mut collider_query {
+            let collision = collide(
+                transform.translation,
+                transform.scale.truncate(),
+                player_transform.translation,
+                // Vec2 {
+                //     x: PLAYER_SIZE,
+                //     y: PLAYER_SIZE,
+                // },
+                player_transform.scale.truncate(),
+            );
+            if collision.is_some() {
+                let mut rng = rand::thread_rng();
+                let bullet_random = rng.gen_range(0..=2);
+                player.powerup = true;
+                player.power_up_type = BulletType::convert_int(bullet_random);
+                commands.entity(collider_entity).despawn();
+            }
+        }
+    }
+}
+
 fn tick_timer(
     mut commands: Commands,
     mut player_query: Query<&mut Player>,
@@ -274,10 +306,10 @@ fn player_shoot(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    players: Query<(&Player, &Transform)>,
+    mut players: Query<(&mut Player, &Transform)>,
     keys: Res<Input<KeyCode>>,
 ) {
-    for (player, transform) in &players {
+    for (mut player, transform) in &mut players {
         if keys.just_pressed(player.bindings.shoot) && player.stunned == false {
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
@@ -297,10 +329,13 @@ fn player_shoot(
                 },
             ));
         }
-        if keys.just_pressed(player.bindings.shoot_special) && player.stunned == false {
+        if keys.just_pressed(player.bindings.shoot_special)
+            && player.stunned == false
+            && player.powerup == true
+        {
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
-                Bullet::ice_bullet(player.direction.clone()),
+                Bullet::bullet_from_enum(player.power_up_type.as_ref(), &player.direction),
                 MaterialMesh2dBundle {
                     mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
                     material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
@@ -315,7 +350,30 @@ fn player_shoot(
                     ..default()
                 },
             ));
+            player.powerup = false;
         }
+    }
+}
+
+fn spawn_powerup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    power_up_query: Query<Entity, With<PowerUp>>,
+) {
+    if power_up_query.is_empty() {
+        commands.spawn((
+            PowerUp {
+                pickup_type: BulletType::IceBullet,
+            },
+            MaterialMesh2dBundle {
+                mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
+                material: materials.add(Color::rgb(0.0, 1.0, 0.0).into()),
+                transform: Transform::from_translation(PowerUp::generate_random_position()),
+                ..default()
+            },
+            Collider,
+        ));
     }
 }
 

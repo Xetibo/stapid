@@ -66,3 +66,15 @@ pub struct Bindings {
     #[inspectable(ignore)]
     pub left: KeyCode,
 }
+
+impl BulletType {
+        pub fn convert_int(number: i32) -> Option<BulletType>{
+        match number {
+            0 => Some(BulletType::IceBullet),
+            1 => Some(BulletType::ExplosiveBullet),
+            2 => Some(BulletType::BouncyBullet),
+            _ => None,
+        }
+    }
+
+}
