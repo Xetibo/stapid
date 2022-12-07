@@ -1,12 +1,12 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::MaterialMesh2dBundle};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use constants::PLAYER_SIZE;
-use game_objects::{PowerUp, Explosion};
+use game_objects::{Explosion, PowerUp};
 use rand::prelude::*;
 use std::time::Duration;
 
 pub mod game_utils;
-use crate::game_utils::{BulletType, Collider, Direction, HitCooldownTimer, Name, TimerType};
+use crate::game_utils::{BulletType, Collider, Direction, HitCooldownTimer, Name, TimerType, DirectionHelper};
 
 pub mod game_objects;
 use crate::game_objects::{Bullet, Player, Wall};
@@ -117,19 +117,23 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>, timer: Res<Time>) {
     for (bullet, mut transform) in &mut bullets {
-        match bullet.direction {
+        match bullet.direction.direction_y {
             Direction::Up => {
                 transform.translation.y += 50. * bullet.speed * timer.delta_seconds();
             }
             Direction::Down => {
                 transform.translation.y -= 50. * bullet.speed * timer.delta_seconds();
             }
+            _ => (),
+        }
+        match bullet.direction.direction_x {
             Direction::Right => {
                 transform.translation.x += 50. * bullet.speed * timer.delta_seconds();
             }
             Direction::Left => {
                 transform.translation.x -= 50. * bullet.speed * timer.delta_seconds();
             }
+            _ => (),
         }
     }
 }
@@ -189,14 +193,12 @@ fn collision_bullet(
                     BulletType::ExplosiveBullet => {
                         commands.entity(bullet_entity).despawn();
                         commands.spawn((
-                            Explosion {
-                                radius: 50.0,
-                            },
+                            Explosion { radius: 50.0 },
                             MaterialMesh2dBundle {
                                 mesh: meshes.add(shape::Circle::new(50.0).into()).into(),
                                 material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
                                 transform: Transform::from_translation(
-                                    bullet_transform.translation
+                                    bullet_transform.translation,
                                 ),
                                 ..default()
                             },
@@ -204,7 +206,10 @@ fn collision_bullet(
                         ));
                     }
                     BulletType::BouncyBullet => {
-                        bullet.direction = bullet.direction.opposite();
+                        bullet.direction = DirectionHelper {
+                            direction_x: bullet.direction.direction_x.opposite(),
+                            direction_y: bullet.direction.direction_y.opposite(),
+                        };
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
@@ -272,9 +277,9 @@ fn collision_explosion(
             );
             if collision.is_some() {
                 if player.lifes > 2 {
-                player.lifes -= 2;
+                    player.lifes -= 2;
                 } else {
-                commands.entity(player_entity).despawn();
+                    commands.entity(player_entity).despawn();
                 }
             }
             commands.entity(collider_entity).despawn();
@@ -314,29 +319,66 @@ fn move_all_players(
 ) {
     for (mut player, mut transform) in &mut players {
         if player.stunned == false {
-            if keys.pressed(player.bindings.up) {
+            if keys.pressed(player.bindings.up) && keys.pressed(player.bindings.right) {
+                let new_position_y =
+                    transform.translation.y + 80. * player.speed * timer.delta_seconds();
+                let new_position_x =
+                    transform.translation.x + 80. * player.speed * timer.delta_seconds();
+                transform.translation.y = new_position_y.clamp(TOP_BOUND, BOTTOM_BOUND);
+                transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
+                player.direction.direction_y = Direction::Up;
+                player.direction.direction_x = Direction::Right;
+            } else if keys.pressed(player.bindings.up) && keys.pressed(player.bindings.left) {
+                let new_position_y =
+                    transform.translation.y + 80. * player.speed * timer.delta_seconds();
+                let new_position_x =
+                    transform.translation.x - 80. * player.speed * timer.delta_seconds();
+                transform.translation.y = new_position_y.clamp(TOP_BOUND, BOTTOM_BOUND);
+                transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
+                player.direction.direction_y = Direction::Up;
+                player.direction.direction_x = Direction::Left;
+            } else if keys.pressed(player.bindings.down) && keys.pressed(player.bindings.right) {
+                let new_position_y =
+                    transform.translation.y - 80. * player.speed * timer.delta_seconds();
+                let new_position_x =
+                    transform.translation.x + 80. * player.speed * timer.delta_seconds();
+                transform.translation.y = new_position_y.clamp(TOP_BOUND, BOTTOM_BOUND);
+                transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
+                player.direction.direction_y = Direction::Down;
+                player.direction.direction_x = Direction::Right;
+            } else if keys.pressed(player.bindings.down) && keys.pressed(player.bindings.left) {
+                let new_position_y =
+                    transform.translation.y - 80. * player.speed * timer.delta_seconds();
+                let new_position_x =
+                    transform.translation.x - 80. * player.speed * timer.delta_seconds();
+                transform.translation.y = new_position_y.clamp(TOP_BOUND, BOTTOM_BOUND);
+                transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
+                player.direction.direction_y = Direction::Down;
+                player.direction.direction_x = Direction::Left;
+            }else if keys.pressed(player.bindings.up) {
                 let new_position =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
-                player.direction = Direction::Up;
-            }
-            if keys.pressed(player.bindings.down) {
+                player.direction.direction_y = Direction::Up;
+                player.direction.direction_x = Direction::None;
+            } else if keys.pressed(player.bindings.down) {
                 let new_position =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
-                player.direction = Direction::Down;
-            }
-            if keys.pressed(player.bindings.right) {
+                player.direction.direction_y = Direction::Down;
+                player.direction.direction_x = Direction::None;
+            } else if keys.pressed(player.bindings.right) {
                 let new_position =
                     transform.translation.x + 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
-                player.direction = Direction::Right;
-            }
-            if keys.pressed(player.bindings.left) {
+                player.direction.direction_x = Direction::Right;
+                player.direction.direction_y = Direction::None;
+            } else if keys.pressed(player.bindings.left) {
                 let new_position =
                     transform.translation.x - 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
-                player.direction = Direction::Left;
+                player.direction.direction_x = Direction::Left;
+                player.direction.direction_y = Direction::None;
             }
         }
     }
@@ -422,6 +464,9 @@ fn spawn_walls(mut commands: Commands) {
     commands.spawn(Wall::new(Direction::Down));
     commands.spawn(Wall::new(Direction::Right));
     commands.spawn(Wall::new(Direction::Left));
+    commands.spawn(Wall::new_random_wall());
+    commands.spawn(Wall::new_random_wall());
+    commands.spawn(Wall::new_random_wall());
 }
 
 fn spawn_camera(mut commands: Commands) {

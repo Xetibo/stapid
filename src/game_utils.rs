@@ -7,6 +7,7 @@ pub enum Direction {
     Down,
     Right,
     Left,
+    None,
 }
 impl Direction {
     pub fn opposite(&self) -> Direction {
@@ -15,8 +16,15 @@ impl Direction {
             Direction::Down => Direction::Up,
             Direction::Right => Direction::Left,
             Direction::Left => Direction::Right,
+            Direction::None => Direction::None,
         }
     }
+}
+
+#[derive(Component, Inspectable, Clone)]
+pub struct DirectionHelper {
+    pub direction_y: Direction,
+    pub direction_x: Direction,
 }
 
 #[derive(Component, Inspectable)]

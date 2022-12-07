@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 
 use crate::constants::{WALL_BOTTOM, WALL_LEFT, WALL_RIGHT, WALL_THICKNESS, WALL_TOP};
-use crate::game_utils::{Bindings, BulletType, Collider, Direction};
+use crate::game_utils::{Bindings, BulletType, Collider, Direction, DirectionHelper};
 use rand::prelude::*;
 
 #[derive(Component, Inspectable)]
@@ -13,7 +13,7 @@ pub struct Player {
     pub stunned: bool,
     pub powerup: bool,
     pub speed: f32,
-    pub direction: Direction,
+    pub direction: DirectionHelper,
     pub name: String,
     pub bindings: Bindings,
     pub power_up_type: Option<BulletType>,
@@ -26,7 +26,7 @@ pub struct Bullet {
     pub area_of_effect: f32,
     pub stuns: bool,
     pub bounces: bool,
-    pub direction: Direction,
+    pub direction: DirectionHelper,
     pub color: Color,
 }
 
@@ -64,7 +64,10 @@ impl Player {
             stunned: false,
             powerup: false,
             speed: 2.5,
-            direction: Direction::Up,
+            direction: DirectionHelper {
+                direction_y: Direction::Up,
+                direction_x: Direction::Right,
+            },
             name: entered_name,
             bindings: Bindings {
                 shoot: entered_shootbind,
@@ -83,33 +86,36 @@ impl Player {
     }
 
     pub fn get_bullet_spawn_position(&self) -> (f32, f32) {
-        match self.direction {
-            Direction::Up => (0.0, 30.0),
-            Direction::Down => (0.0, -30.0),
-            Direction::Right => (30.0, 0.0),
-            Direction::Left => (-30.0, 0.0),
-        }
+        let bullet_x = match self.direction.direction_x {
+            Direction::Right => 30.0,
+            Direction::Left => -30.0,
+            _ => 0.0,
+        };
+        let bullet_y = match self.direction.direction_y {
+            Direction::Up => 30.0,
+            Direction::Down => -30.0,
+            _ => 0.0,
+        };
+        (bullet_x, bullet_y)
     }
 }
 
 impl Bullet {
     pub fn bullet_from_enum(
         entered_bullet_type: Option<&BulletType>,
-        direction: &Direction,
+        direction: &DirectionHelper,
     ) -> Bullet {
         match entered_bullet_type.unwrap() {
-            bullet_type => {
-                match bullet_type {
-                    BulletType::NormalBullet => Self::normal_bullet(direction.clone()),
-                    BulletType::IceBullet => Self::ice_bullet(direction.clone()),
-                    BulletType::ExplosiveBullet => Self::explosive_bullet(direction.clone()),
-                    BulletType::BouncyBullet => Self::bouncy_bullet(direction.clone()),
-                }
-            }
+            bullet_type => match bullet_type {
+                BulletType::NormalBullet => Self::normal_bullet(direction.clone()),
+                BulletType::IceBullet => Self::ice_bullet(direction.clone()),
+                BulletType::ExplosiveBullet => Self::explosive_bullet(direction.clone()),
+                BulletType::BouncyBullet => Self::bouncy_bullet(direction.clone()),
+            },
         }
     }
 
-    pub fn normal_bullet(direction_entered: Direction) -> Bullet {
+    pub fn normal_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::NormalBullet,
             speed: 10.0,
@@ -121,10 +127,10 @@ impl Bullet {
         }
     }
 
-    pub fn ice_bullet(direction_entered: Direction) -> Bullet {
+    pub fn ice_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::IceBullet,
-            speed: 12.0,
+            speed: 20.0,
             area_of_effect: 1.0,
             stuns: true,
             bounces: false,
@@ -133,10 +139,10 @@ impl Bullet {
         }
     }
 
-    pub fn explosive_bullet(direction_entered: Direction) -> Bullet {
+    pub fn explosive_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::ExplosiveBullet,
-            speed: 5.0,
+            speed: 6.0,
             area_of_effect: 5.0,
             stuns: false,
             bounces: false,
@@ -145,10 +151,10 @@ impl Bullet {
         }
     }
 
-    pub fn bouncy_bullet(direction_entered: Direction) -> Bullet {
+    pub fn bouncy_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::BouncyBullet,
-            speed: 8.0,
+            speed: 15.0,
             area_of_effect: 1.0,
             stuns: false,
             bounces: true,
@@ -162,8 +168,8 @@ impl PowerUp {
     pub fn generate_random_position() -> Vec3 {
         let mut rng = rand::thread_rng();
         Vec3 {
-            x: rng.gen_range((WALL_LEFT + 10.0)..= (WALL_RIGHT - 10.0)),
-            y: rng.gen_range((WALL_TOP + 10.0)..=(WALL_BOTTOM - 10.0)),
+            x: rng.gen_range((WALL_LEFT + 15.0)..=(WALL_RIGHT - 15.0)),
+            y: rng.gen_range((WALL_TOP + 15.0)..=(WALL_BOTTOM - 15.0)),
             z: 0.0,
         }
     }
@@ -196,6 +202,7 @@ impl Wall {
                             y: 0.0,
                             z: (0.0),
                         },
+                        Direction::None => Vec3 {x:0.0, y:0.0, z:0.0,},
                     },
                     scale: match entered_direction {
                         Direction::Up | Direction::Down => Vec3 {
@@ -208,6 +215,7 @@ impl Wall {
                             y: 1010.0,
                             z: (1.0),
                         },
+                        Direction::None => Vec3 {x:0.0, y:0.0, z:0.0,},
                     },
                     ..default()
                 },
@@ -218,6 +226,69 @@ impl Wall {
                 ..default()
             },
             collider: Collider {},
+        }
+    }
+
+    pub fn new_random_wall() -> Wall {
+        let mut rng = rand::thread_rng();
+        let direction = Self::convert_int(rng.gen_range(0..=1));
+        match direction.unwrap() {
+            Direction::Up => Wall {
+                direction: Direction::Up,
+                sprite_bundle: SpriteBundle {
+                    transform: Transform {
+                        translation: Vec3 {
+                            x: rng.gen_range(-500..=500) as f32,
+                            y: rng.gen_range(-500..=500) as f32,
+                            z: (0.0),
+                        },
+                        scale: Vec3 {
+                            x: 500.0,
+                            y: WALL_THICKNESS,
+                            z: (1.0),
+                        },
+                        ..default()
+                    },
+                    sprite: Sprite {
+                        color: Color::rgb(1.0, 0.0, 0.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                collider: Collider {},
+            },
+            _ => Wall {
+                direction: Direction::Right,
+                sprite_bundle: SpriteBundle {
+                    transform: Transform {
+                        translation: Vec3 {
+                            x: rng.gen_range(0..=500) as f32,
+                            y: rng.gen_range(0..=500) as f32,
+                            z: (0.0),
+                        },
+                        scale: Vec3 {
+                            x: WALL_THICKNESS,
+                            y: 500.0,
+                            z: (1.0),
+                        },
+                        ..default()
+                    },
+                    sprite: Sprite {
+                        color: Color::rgb(1.0, 0.0, 0.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+                collider: Collider {},
+            },
+        }
+    }
+
+    pub fn convert_int(number: i32) -> Option<Direction> {
+        match number {
+            0 => Some(Direction::Up),
+            1 => Some(Direction::Right),
+            _ => None,
         }
     }
 }
