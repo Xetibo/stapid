@@ -6,7 +6,9 @@ use rand::prelude::*;
 use std::time::Duration;
 
 pub mod game_utils;
-use crate::game_utils::{BulletType, Collider, Direction, HitCooldownTimer, Name, TimerType, DirectionHelper};
+use crate::game_utils::{
+    BulletType, Collider, Direction, DirectionHelper, HitCooldownTimer, Name, TimerType,
+};
 
 pub mod game_objects;
 use crate::game_objects::{Bullet, Player, Wall};
@@ -355,7 +357,7 @@ fn move_all_players(
                 transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::Left;
-            }else if keys.pressed(player.bindings.up) {
+            } else if keys.pressed(player.bindings.up) {
                 let new_position =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);

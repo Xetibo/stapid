@@ -202,7 +202,11 @@ impl Wall {
                             y: 0.0,
                             z: (0.0),
                         },
-                        Direction::None => Vec3 {x:0.0, y:0.0, z:0.0,},
+                        Direction::None => Vec3 {
+                            x: 0.0,
+                            y: 0.0,
+                            z: 0.0,
+                        },
                     },
                     scale: match entered_direction {
                         Direction::Up | Direction::Down => Vec3 {
@@ -215,7 +219,11 @@ impl Wall {
                             y: 1010.0,
                             z: (1.0),
                         },
-                        Direction::None => Vec3 {x:0.0, y:0.0, z:0.0,},
+                        Direction::None => Vec3 {
+                            x: 0.0,
+                            y: 0.0,
+                            z: 0.0,
+                        },
                     },
                     ..default()
                 },

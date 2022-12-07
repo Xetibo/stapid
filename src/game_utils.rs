@@ -76,7 +76,7 @@ pub struct Bindings {
 }
 
 impl BulletType {
-        pub fn convert_int(number: i32) -> Option<BulletType>{
+    pub fn convert_int(number: i32) -> Option<BulletType> {
         match number {
             0 => Some(BulletType::IceBullet),
             1 => Some(BulletType::ExplosiveBullet),
@@ -84,5 +84,4 @@ impl BulletType {
             _ => None,
         }
     }
-
 }
