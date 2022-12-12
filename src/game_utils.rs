@@ -27,6 +27,14 @@ pub struct DirectionHelper {
     pub direction_x: Direction,
 }
 
+#[derive(Component, Inspectable, Clone)]
+pub struct DirectionBlock {
+    pub up: bool,
+    pub down: bool,
+    pub right: bool,
+    pub left: bool,
+}
+
 #[derive(Component, Inspectable)]
 pub enum BulletType {
     NormalBullet,

@@ -1,8 +1,9 @@
+use crate::Collider;
 use bevy::prelude::*;
 use bevy_inspector_egui::Inspectable;
 
 use crate::constants::{WALL_BOTTOM, WALL_LEFT, WALL_RIGHT, WALL_THICKNESS, WALL_TOP};
-use crate::game_utils::{Bindings, BulletType, Collider, Direction, DirectionHelper};
+use crate::game_utils::{Bindings, BulletType, Direction, DirectionBlock, DirectionHelper};
 use rand::prelude::*;
 
 #[derive(Component, Inspectable)]
@@ -14,6 +15,7 @@ pub struct Player {
     pub powerup: bool,
     pub speed: f32,
     pub direction: DirectionHelper,
+    pub direction_block: DirectionBlock,
     pub name: String,
     pub bindings: Bindings,
     pub power_up_type: Option<BulletType>,
@@ -41,11 +43,14 @@ pub struct PowerUp {
 }
 
 #[derive(Bundle)]
-pub struct Wall {
+pub struct WallBundle {
     pub direction: Direction,
     pub sprite_bundle: SpriteBundle,
     pub collider: Collider,
 }
+
+#[derive(Component, Inspectable)]
+pub struct Wall {}
 
 impl Player {
     pub fn new(
@@ -67,6 +72,12 @@ impl Player {
             direction: DirectionHelper {
                 direction_y: Direction::Up,
                 direction_x: Direction::Right,
+            },
+            direction_block: DirectionBlock {
+                up: false,
+                down: false,
+                right: false,
+                left: false,
             },
             name: entered_name,
             bindings: Bindings {
@@ -175,9 +186,9 @@ impl PowerUp {
     }
 }
 
-impl Wall {
-    pub fn new(entered_direction: Direction) -> Wall {
-        Wall {
+impl WallBundle {
+    pub fn new(entered_direction: Direction) -> WallBundle {
+        WallBundle {
             direction: entered_direction.clone(),
             sprite_bundle: SpriteBundle {
                 transform: Transform {
@@ -233,21 +244,21 @@ impl Wall {
                 },
                 ..default()
             },
-            collider: Collider {},
+            collider: Collider,
         }
     }
 
-    pub fn new_random_wall() -> Wall {
+    pub fn new_random_wall() -> WallBundle {
         let mut rng = rand::thread_rng();
         let direction = Self::convert_int(rng.gen_range(0..=1));
         match direction.unwrap() {
-            Direction::Up => Wall {
+            Direction::Up => WallBundle {
                 direction: Direction::Up,
                 sprite_bundle: SpriteBundle {
                     transform: Transform {
                         translation: Vec3 {
                             x: rng.gen_range(-500..=500) as f32,
-                            y: rng.gen_range(-500..=500) as f32,
+                            y: rng.gen_range(-400..=400) as f32,
                             z: (0.0),
                         },
                         scale: Vec3 {
@@ -263,15 +274,15 @@ impl Wall {
                     },
                     ..default()
                 },
-                collider: Collider {},
+                collider: Collider,
             },
-            _ => Wall {
+            _ => WallBundle {
                 direction: Direction::Right,
                 sprite_bundle: SpriteBundle {
                     transform: Transform {
                         translation: Vec3 {
-                            x: rng.gen_range(0..=500) as f32,
-                            y: rng.gen_range(0..=500) as f32,
+                            x: rng.gen_range(-500..=500) as f32,
+                            y: rng.gen_range(-250..=250) as f32,
                             z: (0.0),
                         },
                         scale: Vec3 {
@@ -287,7 +298,7 @@ impl Wall {
                     },
                     ..default()
                 },
-                collider: Collider {},
+                collider: Collider,
             },
         }
     }

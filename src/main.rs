@@ -1,4 +1,7 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::MaterialMesh2dBundle};
+use bevy::{
+    prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision,
+    sprite::MaterialMesh2dBundle,
+};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use constants::PLAYER_SIZE;
 use game_objects::{Explosion, PowerUp};
@@ -11,7 +14,7 @@ use crate::game_utils::{
 };
 
 pub mod game_objects;
-use crate::game_objects::{Bullet, Player, Wall};
+use crate::game_objects::{Bullet, Player, Wall, WallBundle};
 
 pub mod constants;
 use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, RIGHT_BOUND, TOP_BOUND};
@@ -30,6 +33,7 @@ fn main() {
         .add_plugin(WorldInspectorPlugin::new())
         .register_inspectable::<Player>()
         .register_inspectable::<Bullet>()
+        .register_inspectable::<Wall>()
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_player)
         .add_startup_system(spawn_camera)
@@ -37,6 +41,7 @@ fn main() {
         .add_system(move_all_players)
         .add_system(player_shoot)
         .add_system(move_all_bullets)
+        .add_system(collision_player)
         .add_system(collision_bullet)
         .add_system(collision_powerup)
         .add_system(collision_explosion)
@@ -63,8 +68,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: asset_server.load("../assets/stick.resized.png"),
             transform: Transform {
                 translation: Vec3 {
-                    x: 10.0,
-                    y: 10.0,
+                    x: 50.0,
+                    y: 50.0,
                     z: 0.0,
                 },
                 scale: Vec3 {
@@ -98,8 +103,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: asset_server.load("../assets/stick.resized.png"),
             transform: Transform {
                 translation: Vec3 {
-                    x: -10.0,
-                    y: -10.0,
+                    x: -50.0,
+                    y: 50.0,
                     z: 0.0,
                 },
                 scale: Vec3 {
@@ -114,6 +119,76 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         Collider,
         Direction::Up,
         Name::new(String::from("player2")),
+    ));
+    commands.spawn((
+        Player::new(
+            String::from("player3"),
+            KeyCode::Y,
+            KeyCode::U,
+            KeyCode::T,
+            KeyCode::G,
+            KeyCode::H,
+            KeyCode::F,
+        ),
+        SpriteBundle {
+            sprite: Sprite {
+                custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                ..default()
+            },
+            texture: asset_server.load("../assets/stick.resized.png"),
+            transform: Transform {
+                translation: Vec3 {
+                    x: 50.0,
+                    y: -50.0,
+                    z: 0.0,
+                },
+                scale: Vec3 {
+                    x: PLAYER_SIZE,
+                    y: PLAYER_SIZE,
+                    z: 0.0,
+                },
+                ..default()
+            },
+            ..default()
+        },
+        Collider,
+        Direction::Up,
+        Name::new(String::from("player3")),
+    ));
+    commands.spawn((
+        Player::new(
+            String::from("player4"),
+            KeyCode::O,
+            KeyCode::P,
+            KeyCode::I,
+            KeyCode::K,
+            KeyCode::L,
+            KeyCode::J,
+        ),
+        SpriteBundle {
+            sprite: Sprite {
+                custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                ..default()
+            },
+            texture: asset_server.load("../assets/stick.resized.png"),
+            transform: Transform {
+                translation: Vec3 {
+                    x: -50.0,
+                    y: -50.0,
+                    z: 0.0,
+                },
+                scale: Vec3 {
+                    x: PLAYER_SIZE,
+                    y: PLAYER_SIZE,
+                    z: 0.0,
+                },
+                ..default()
+            },
+            ..default()
+        },
+        Collider,
+        Direction::Up,
+        Name::new(String::from("player4")),
     ));
 }
 
@@ -289,6 +364,61 @@ fn collision_explosion(
     }
 }
 
+fn collision_player(
+    collider_query: Query<&Transform, (With<Collider>, With<Wall>)>,
+    mut player_query: Query<(&Transform, &mut Player)>,
+) {
+    for (player_transform, mut player) in &mut player_query {
+        let mut b_was_collision_up = false;
+        let mut b_was_collision_down = false;
+        let mut b_was_collision_right = false;
+        let mut b_was_collision_left = false;
+        for transform in collider_query.iter() {
+            let collision = collide(
+                transform.translation,
+                transform.scale.truncate(),
+                player_transform.translation,
+                player_transform.scale.truncate() + 1.1,
+            );
+            if collision.is_some() {
+                let direction = collision.unwrap();
+                match direction {
+                    Collision::Right => {
+                        player.direction_block.right = true;
+                        b_was_collision_right = true;
+                    }
+                    Collision::Left => {
+                        player.direction_block.left = true;
+                        b_was_collision_left = true;
+                    }
+                    Collision::Top => {
+                        player.direction_block.up = true;
+                        b_was_collision_up = true;
+                    }
+                    Collision::Bottom => {
+                        player.direction_block.down = true;
+                        b_was_collision_down = true;
+                    }
+                    Collision::Inside => (),
+                }
+            }
+        }
+        if !b_was_collision_up {
+            player.direction_block.up = false;
+        }
+        if !b_was_collision_down {
+            player.direction_block.down = false;
+        }
+        if !b_was_collision_right {
+            player.direction_block.right = false;
+        }
+        if !b_was_collision_left {
+            player.direction_block.left = false;
+        }
+
+    }
+}
+
 fn tick_timer(
     mut commands: Commands,
     mut player_query: Query<&mut Player>,
@@ -321,7 +451,11 @@ fn move_all_players(
 ) {
     for (mut player, mut transform) in &mut players {
         if player.stunned == false {
-            if keys.pressed(player.bindings.up) && keys.pressed(player.bindings.right) {
+            if keys.pressed(player.bindings.up)
+                && keys.pressed(player.bindings.right)
+                && !player.direction_block.up
+                && !player.direction_block.right
+            {
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -330,7 +464,11 @@ fn move_all_players(
                 transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_y = Direction::Up;
                 player.direction.direction_x = Direction::Right;
-            } else if keys.pressed(player.bindings.up) && keys.pressed(player.bindings.left) {
+            } else if keys.pressed(player.bindings.up)
+                && keys.pressed(player.bindings.left)
+                && !player.direction_block.up
+                && !player.direction_block.left
+            {
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -339,7 +477,11 @@ fn move_all_players(
                 transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_y = Direction::Up;
                 player.direction.direction_x = Direction::Left;
-            } else if keys.pressed(player.bindings.down) && keys.pressed(player.bindings.right) {
+            } else if keys.pressed(player.bindings.down)
+                && keys.pressed(player.bindings.right)
+                && !player.direction_block.down
+                && !player.direction_block.right
+            {
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -348,7 +490,11 @@ fn move_all_players(
                 transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::Right;
-            } else if keys.pressed(player.bindings.down) && keys.pressed(player.bindings.left) {
+            } else if keys.pressed(player.bindings.down)
+                && keys.pressed(player.bindings.left)
+                && !player.direction_block.down
+                && !player.direction_block.left
+            {
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -357,25 +503,25 @@ fn move_all_players(
                 transform.translation.x = new_position_x.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::Left;
-            } else if keys.pressed(player.bindings.up) {
+            } else if keys.pressed(player.bindings.up) && !player.direction_block.up {
                 let new_position =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Up;
                 player.direction.direction_x = Direction::None;
-            } else if keys.pressed(player.bindings.down) {
+            } else if keys.pressed(player.bindings.down) && !player.direction_block.down {
                 let new_position =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::None;
-            } else if keys.pressed(player.bindings.right) {
+            } else if keys.pressed(player.bindings.right) && !player.direction_block.right {
                 let new_position =
                     transform.translation.x + 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_x = Direction::Right;
                 player.direction.direction_y = Direction::None;
-            } else if keys.pressed(player.bindings.left) {
+            } else if keys.pressed(player.bindings.left) && !player.direction_block.left {
                 let new_position =
                     transform.translation.x - 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
@@ -462,13 +608,15 @@ fn spawn_powerup(
 }
 
 fn spawn_walls(mut commands: Commands) {
-    commands.spawn(Wall::new(Direction::Up));
-    commands.spawn(Wall::new(Direction::Down));
-    commands.spawn(Wall::new(Direction::Right));
-    commands.spawn(Wall::new(Direction::Left));
-    commands.spawn(Wall::new_random_wall());
-    commands.spawn(Wall::new_random_wall());
-    commands.spawn(Wall::new_random_wall());
+    commands.spawn(WallBundle::new(Direction::Up));
+    commands.spawn(WallBundle::new(Direction::Down));
+    commands.spawn(WallBundle::new(Direction::Right));
+    commands.spawn(WallBundle::new(Direction::Left));
+    commands.spawn((WallBundle::new_random_wall(), Wall {}));
+    commands.spawn((WallBundle::new_random_wall(), Wall {}));
+    commands.spawn((WallBundle::new_random_wall(), Wall {}));
+    commands.spawn((WallBundle::new_random_wall(), Wall {}));
+    commands.spawn((WallBundle::new_random_wall(), Wall {}));
 }
 
 fn spawn_camera(mut commands: Commands) {
