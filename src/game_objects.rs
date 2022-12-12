@@ -98,13 +98,13 @@ impl Player {
 
     pub fn get_bullet_spawn_position(&self) -> (f32, f32) {
         let bullet_x = match self.direction.direction_x {
-            Direction::Right => 30.0,
-            Direction::Left => -30.0,
+            Direction::Right => 27.0,
+            Direction::Left => -27.0,
             _ => 0.0,
         };
         let bullet_y = match self.direction.direction_y {
-            Direction::Up => 30.0,
-            Direction::Down => -30.0,
+            Direction::Up => 27.0,
+            Direction::Down => -27.0,
             _ => 0.0,
         };
         (bullet_x, bullet_y)

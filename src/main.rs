@@ -5,6 +5,7 @@ use bevy::{
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use constants::PLAYER_SIZE;
 use game_objects::{Explosion, PowerUp};
+use level1::spawn_level_1;
 use rand::prelude::*;
 use std::time::Duration;
 
@@ -18,6 +19,8 @@ use crate::game_objects::{Bullet, Player, Wall, WallBundle};
 
 pub mod constants;
 use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, RIGHT_BOUND, TOP_BOUND};
+
+pub mod level1;
 
 fn main() {
     App::new()
@@ -35,6 +38,7 @@ fn main() {
         .register_inspectable::<Bullet>()
         .register_inspectable::<Wall>()
         .add_startup_system(spawn_walls)
+        .add_startup_system(spawn_level_1)
         .add_startup_system(spawn_player)
         .add_startup_system(spawn_camera)
         .add_system(spawn_powerup)
@@ -68,8 +72,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: asset_server.load("../assets/stick.resized.png"),
             transform: Transform {
                 translation: Vec3 {
-                    x: 50.0,
-                    y: 50.0,
+                    x: -700.0,
+                    y: 350.0,
                     z: 0.0,
                 },
                 scale: Vec3 {
@@ -103,8 +107,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: asset_server.load("../assets/stick.resized.png"),
             transform: Transform {
                 translation: Vec3 {
-                    x: -50.0,
-                    y: 50.0,
+                    x: 700.0,
+                    y: 350.0,
                     z: 0.0,
                 },
                 scale: Vec3 {
@@ -138,8 +142,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: asset_server.load("../assets/stick.resized.png"),
             transform: Transform {
                 translation: Vec3 {
-                    x: 50.0,
-                    y: -50.0,
+                    x: -700.0,
+                    y: -350.0,
                     z: 0.0,
                 },
                 scale: Vec3 {
@@ -173,8 +177,8 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             texture: asset_server.load("../assets/stick.resized.png"),
             transform: Transform {
                 translation: Vec3 {
-                    x: -50.0,
-                    y: -50.0,
+                    x: 700.0,
+                    y: -350.0,
                     z: 0.0,
                 },
                 scale: Vec3 {
@@ -591,7 +595,11 @@ fn spawn_powerup(
     mut materials: ResMut<Assets<ColorMaterial>>,
     power_up_query: Query<Entity, With<PowerUp>>,
 ) {
-    if power_up_query.is_empty() {
+    let mut count = 0;
+    for _entity in &power_up_query {
+        count += 1;
+    }
+    if count < 2 {
         commands.spawn((
             PowerUp {
                 pickup_type: BulletType::IceBullet,
@@ -612,11 +620,6 @@ fn spawn_walls(mut commands: Commands) {
     commands.spawn(WallBundle::new(Direction::Down));
     commands.spawn(WallBundle::new(Direction::Right));
     commands.spawn(WallBundle::new(Direction::Left));
-    commands.spawn((WallBundle::new_random_wall(), Wall {}));
-    commands.spawn((WallBundle::new_random_wall(), Wall {}));
-    commands.spawn((WallBundle::new_random_wall(), Wall {}));
-    commands.spawn((WallBundle::new_random_wall(), Wall {}));
-    commands.spawn((WallBundle::new_random_wall(), Wall {}));
 }
 
 fn spawn_camera(mut commands: Commands) {
