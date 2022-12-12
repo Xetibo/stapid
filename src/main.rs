@@ -287,9 +287,16 @@ fn collision_bullet(
                         ));
                     }
                     BulletType::BouncyBullet => {
-                        bullet.direction = DirectionHelper {
-                            direction_x: bullet.direction.direction_x.opposite(),
-                            direction_y: bullet.direction.direction_y.opposite(),
+                        let direction_collision = collision.unwrap();
+                        bullet.direction = match direction_collision {
+                            Collision::Left | Collision::Right => DirectionHelper {
+                                direction_x: bullet.direction.direction_x.opposite(),
+                                direction_y: bullet.direction.direction_y.clone(),
+                            },
+                            _ => DirectionHelper {
+                                direction_x: bullet.direction.direction_x.clone(),
+                                direction_y: bullet.direction.direction_y.opposite(),
+                            },
                         };
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
@@ -419,7 +426,6 @@ fn collision_player(
         if !b_was_collision_left {
             player.direction_block.left = false;
         }
-
     }
 }
 
