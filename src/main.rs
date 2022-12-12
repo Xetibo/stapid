@@ -389,7 +389,7 @@ fn collision_player(
                 transform.translation,
                 transform.scale.truncate(),
                 player_transform.translation,
-                player_transform.scale.truncate() + 1.1,
+                player_transform.scale.truncate() + 1.15,
             );
             if collision.is_some() {
                 let direction = collision.unwrap();
