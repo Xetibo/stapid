@@ -553,13 +553,11 @@ fn update_ui(
 fn reset_clicked(
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
     mut event_writer: EventWriter<ResetGameEvent>,
-    // mut event_writer_ui: EventWriter<UpdateUIEvent>
 ) {
     for interaction in &interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 event_writer.send_default();
-                // event_writer_ui.send_default();
             }
             _ => (),
         }
