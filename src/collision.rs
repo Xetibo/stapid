@@ -1,6 +1,11 @@
 use crate::game_objects::{Bullet, Explosion, Player, PowerUp, Wall};
-use crate::game_utils::{BulletType, Collider, DirectionHelper, UpdateUIEvent, HitCooldownTimer, TimerType};
-use bevy::{prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision, sprite::MaterialMesh2dBundle, utils::Duration};
+use crate::game_utils::{
+    BulletType, Collider, DirectionHelper, HitCooldownTimer, TimerType, UpdateUIEvent,
+};
+use bevy::{
+    prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision,
+    sprite::MaterialMesh2dBundle, utils::Duration,
+};
 use rand::prelude::*;
 
 pub fn collision_explosion(

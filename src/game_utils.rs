@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use std::fmt;
 use bevy_inspector_egui::Inspectable;
+use std::fmt;
 
 #[derive(Default)]
 pub struct ResetGameEvent {}

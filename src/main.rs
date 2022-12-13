@@ -386,10 +386,7 @@ fn player_shoot(
                 timer_type: TimerType::Shoot,
             },));
         }
-        if keys.just_pressed(player.bindings.shoot_special)
-            && !player.stunned
-            && player.powerup
-        {
+        if keys.just_pressed(player.bindings.shoot_special) && !player.stunned && player.powerup {
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
                 Bullet::bullet_from_enum(player.power_up_type.as_ref(), &player.direction),
