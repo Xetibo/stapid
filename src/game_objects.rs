@@ -14,6 +14,7 @@ pub struct Player {
     pub invulnerable: bool,
     pub stunned: bool,
     pub powerup: bool,
+    pub shoot: bool,
     pub speed: f32,
     pub direction: DirectionHelper,
     pub direction_block: DirectionBlock,
@@ -77,6 +78,7 @@ impl Player {
             invulnerable: false,
             stunned: false,
             powerup: false,
+            shoot: true,
             speed: 2.5,
             direction: DirectionHelper {
                 direction_y: Direction::Up,

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle, utils::Duration};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 
 pub mod game_utils;
@@ -254,6 +254,10 @@ fn tick_timer(
                         player.invulnerable = false;
                         commands.entity(entity).despawn();
                     }
+                    TimerType::Shoot => {
+                        player.shoot = true;
+                        commands.entity(entity).despawn();
+                    }
                 }
             }
         }
@@ -357,7 +361,8 @@ fn player_shoot(
     keys: Res<Input<KeyCode>>,
 ) {
     for (mut player, transform) in &mut players {
-        if keys.just_pressed(player.bindings.shoot) && player.stunned == false {
+        if keys.just_pressed(player.bindings.shoot) && !player.stunned && player.shoot {
+            player.shoot = false;
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
                 Bullet::normal_bullet(player.direction.clone()),
@@ -375,10 +380,15 @@ fn player_shoot(
                     ..default()
                 },
             ));
+            commands.spawn((HitCooldownTimer {
+                timer: Timer::new(Duration::from_millis(200), TimerMode::Once),
+                associated_player: player.name.clone(),
+                timer_type: TimerType::Shoot,
+            },));
         }
         if keys.just_pressed(player.bindings.shoot_special)
-            && player.stunned == false
-            && player.powerup == true
+            && !player.stunned
+            && player.powerup
         {
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((

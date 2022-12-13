@@ -63,6 +63,7 @@ pub enum BulletType {
 pub enum TimerType {
     Invulnerable,
     Stun,
+    Shoot,
 }
 
 #[derive(Component, Inspectable)]
