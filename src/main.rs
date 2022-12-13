@@ -442,14 +442,10 @@ fn spawn_ui(
     asset_server: Res<AssetServer>,
     mut event_reader: EventReader<ResetGameEvent>,
     existing_node: Query<Entity, With<UINode>>,
-    existing_text: Query<Entity, With<UIText>>,
 ) {
     for _ in event_reader.iter() {
         for entity in &existing_node {
-            for entity_text in &existing_text {
-                commands.entity(entity_text).despawn();
-            }
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
         }
         commands
             .spawn((
