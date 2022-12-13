@@ -645,14 +645,14 @@ fn spawn_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 overflow: Overflow::Visible,
                 ..default()
             },
-            background_color: Color::rgb(0.0, 0.0, 0.0).into(),
+            background_color: Color::rgba(0.0, 0.0, 0.0, 0.0).into(),
             ..default()
         })
         .with_children(|parent| {
             for n in 1..5 {
                 parent.spawn((
                     TextBundle::from_section(
-                        format!("Player {}\n Lifes: 3", n),
+                        format!("Player {}\nLifes: 3", n),
                         TextStyle {
                             font: asset_server.load("fonts/font.ttf"),
                             font_size: 30.0,
@@ -689,8 +689,12 @@ fn update_ui(
             continue;
         }
         let player = maybe_player.unwrap();
+        let mut powerup = BulletType::NormalBullet;
+        if player.power_up_type.is_some() {    
+            powerup = player.power_up_type.clone().unwrap();
+        }
         *text_node = Text::from_section(
-            format!("Player {}\n Lifes: {}", player.player_number, player.lifes),
+            format!("Player {}\nLifes: {}\nSpecial:\n{}\n\n", player.player_number, player.lifes, powerup),
             TextStyle {
                 font: asset_server.load("fonts/font.ttf"),
                 font_size: 30.0,

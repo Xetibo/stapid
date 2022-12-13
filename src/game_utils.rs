@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use std::fmt;
 use bevy_inspector_egui::Inspectable;
 
 #[derive(Component, Inspectable, Clone)]
@@ -35,7 +36,7 @@ pub struct DirectionBlock {
     pub left: bool,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component, Inspectable, Clone)]
 pub enum BulletType {
     NormalBullet,
     IceBullet,
@@ -90,6 +91,17 @@ impl BulletType {
             1 => Some(BulletType::ExplosiveBullet),
             2 => Some(BulletType::BouncyBullet),
             _ => None,
+        }
+    }
+}
+
+impl fmt::Display for BulletType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BulletType::IceBullet => write!(f, "Ice"),
+            BulletType::NormalBullet => write!(f, "None"),
+            BulletType::ExplosiveBullet => write!(f, "Eplosive"),
+            BulletType::BouncyBullet => write!(f, "Bouncy"),
         }
     }
 }
