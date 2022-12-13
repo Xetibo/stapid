@@ -8,6 +8,7 @@ use rand::prelude::*;
 
 #[derive(Component, Inspectable)]
 pub struct Player {
+    pub player_number: i32,
     pub size: i32,
     pub lifes: i32,
     pub invulnerable: bool,
@@ -52,8 +53,12 @@ pub struct WallBundle {
 #[derive(Component, Inspectable)]
 pub struct Wall {}
 
+#[derive(Component)]
+pub struct UIText {}
+
 impl Player {
     pub fn new(
+        number: i32,
         entered_name: String,
         entered_shootbind: KeyCode,
         entered_shoot_specialbind: KeyCode,
@@ -63,6 +68,7 @@ impl Player {
         entered_leftbind: KeyCode,
     ) -> Player {
         Player {
+            player_number: number,
             size: 50,
             lifes: 3,
             invulnerable: false,

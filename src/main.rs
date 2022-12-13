@@ -15,7 +15,7 @@ use crate::game_utils::{
 };
 
 pub mod game_objects;
-use crate::game_objects::{Bullet, Player, Wall, WallBundle};
+use crate::game_objects::{Bullet, Player, UIText, Wall, WallBundle};
 
 pub mod constants;
 use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, RIGHT_BOUND, TOP_BOUND};
@@ -37,10 +37,12 @@ fn main() {
         .register_inspectable::<Player>()
         .register_inspectable::<Bullet>()
         .register_inspectable::<Wall>()
+        .add_startup_system(spawn_player)
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_level_1)
-        .add_startup_system(spawn_player)
+        .add_startup_system(spawn_ui)
         .add_startup_system(spawn_camera)
+        .add_system(update_ui)
         .add_system(spawn_powerup)
         .add_system(move_all_players)
         .add_system(player_shoot)
@@ -56,6 +58,7 @@ fn main() {
 fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Player::new(
+            1,
             String::from("player1"),
             KeyCode::LControl,
             KeyCode::LShift,
@@ -91,6 +94,7 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
     commands.spawn((
         Player::new(
+            2,
             String::from("player2"),
             KeyCode::RControl,
             KeyCode::RShift,
@@ -126,6 +130,7 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
     commands.spawn((
         Player::new(
+            3,
             String::from("player3"),
             KeyCode::Y,
             KeyCode::U,
@@ -161,6 +166,7 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
     commands.spawn((
         Player::new(
+            4,
             String::from("player4"),
             KeyCode::O,
             KeyCode::P,
@@ -626,6 +632,48 @@ fn spawn_walls(mut commands: Commands) {
     commands.spawn(WallBundle::new(Direction::Down));
     commands.spawn(WallBundle::new(Direction::Right));
     commands.spawn(WallBundle::new(Direction::Left));
+}
+
+fn spawn_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    for n in 1..4 {
+        commands.spawn((
+            TextBundle::from_section(
+                format!("Player {}\n Lifes: 3", n),
+                TextStyle {
+                    font: asset_server.load("fonts/font.ttf"),
+                    font_size: 30.0,
+                    color: Color::WHITE,
+                },
+            )
+            .with_text_alignment(TextAlignment::TOP_LEFT),
+            UIText {},
+        ));
+    }
+}
+
+fn update_ui(
+    mut commands: Commands,
+    mut text_query: Query<(Entity, &UIText, &mut Text)>,
+    player_query: Query<&Player>,
+    asset_server: Res<AssetServer>,
+) {
+    let mut player_iter = player_query.iter();
+    for (entity, _comp, mut text_node) in &mut text_query {
+        let maybe_player = player_iter.next();
+        if !maybe_player.is_some() {
+            commands.entity(entity).despawn();
+            break;
+        }
+        let player = maybe_player.unwrap();
+        *text_node = Text::from_section(
+            format!("Player {}\n Lifes: {}", player.player_number, player.lifes),
+            TextStyle {
+                font: asset_server.load("fonts/font.ttf"),
+                font_size: 30.0,
+                color: Color::WHITE,
+            },
+        );
+    }
 }
 
 fn spawn_camera(mut commands: Commands) {
