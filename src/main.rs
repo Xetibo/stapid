@@ -635,34 +635,58 @@ fn spawn_walls(mut commands: Commands) {
 }
 
 fn spawn_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    for n in 1..4 {
-        commands.spawn((
-            TextBundle::from_section(
-                format!("Player {}\n Lifes: 3", n),
+    commands
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Px(150.0), Val::Percent(100.0)),
+                border: UiRect::all(Val::Px(2.0)),
+                flex_direction: FlexDirection::Column,
+                flex_wrap: FlexWrap::NoWrap,
+                overflow: Overflow::Visible,
+                ..default()
+            },
+            background_color: Color::rgb(0.0, 0.0, 0.0).into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            for n in 1..5 {
+                parent.spawn((
+                    TextBundle::from_section(
+                        format!("Player {}\n Lifes: 3", n),
+                        TextStyle {
+                            font: asset_server.load("fonts/font.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    )
+                    .with_style(Style {
+                        margin: UiRect::all(Val::Px(1.0)),
+                        ..default()
+                    }),
+                    UIText { exists: true },
+                ));
+            }
+        });
+}
+
+fn update_ui(
+    mut text_query: Query<(&mut UIText, &mut Text)>,
+    player_query: Query<&Player>,
+    asset_server: Res<AssetServer>,
+) {
+    let mut player_iter = player_query.iter();
+    for (_comp, mut text_node) in &mut text_query {
+        let maybe_player = player_iter.next();
+        if !maybe_player.is_some() {
+            *text_node = Text::from_section(
+                "",
                 TextStyle {
                     font: asset_server.load("fonts/font.ttf"),
                     font_size: 30.0,
                     color: Color::WHITE,
                 },
-            )
-            .with_text_alignment(TextAlignment::TOP_LEFT),
-            UIText {},
-        ));
-    }
-}
-
-fn update_ui(
-    mut commands: Commands,
-    mut text_query: Query<(Entity, &UIText, &mut Text)>,
-    player_query: Query<&Player>,
-    asset_server: Res<AssetServer>,
-) {
-    let mut player_iter = player_query.iter();
-    for (entity, _comp, mut text_node) in &mut text_query {
-        let maybe_player = player_iter.next();
-        if !maybe_player.is_some() {
-            commands.entity(entity).despawn();
-            break;
+            );
+            continue;
         }
         let player = maybe_player.unwrap();
         *text_node = Text::from_section(
