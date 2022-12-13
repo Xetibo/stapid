@@ -5,13 +5,15 @@ use bevy::{
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use constants::PLAYER_SIZE;
 use game_objects::{Explosion, PowerUp};
+use game_utils::{PlayerHitEvent, PlayerPowerUpEvent, UpdateUIEvent};
 use level1::spawn_level_1;
 use rand::prelude::*;
 use std::time::Duration;
 
 pub mod game_utils;
 use crate::game_utils::{
-    BulletType, Collider, Direction, DirectionHelper, HitCooldownTimer, Name, TimerType,
+    BulletType, Collider, Direction, DirectionHelper, HitCooldownTimer, Name, ResetGameEvent,
+    TimerType,
 };
 
 pub mod game_objects;
@@ -37,11 +39,14 @@ fn main() {
         .register_inspectable::<Player>()
         .register_inspectable::<Bullet>()
         .register_inspectable::<Wall>()
-        .add_startup_system(spawn_player)
+        .add_event::<ResetGameEvent>()
+        .add_event::<UpdateUIEvent>()
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_level_1)
         .add_startup_system(spawn_ui)
         .add_startup_system(spawn_camera)
+        .add_system(reset_clicked)
+        .add_system(spawn_player)
         .add_system(update_ui)
         .add_system(spawn_powerup)
         .add_system(move_all_players)
@@ -55,151 +60,161 @@ fn main() {
         .run();
 }
 
-fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn((
-        Player::new(
-            1,
-            String::from("player1"),
-            KeyCode::LControl,
-            KeyCode::LShift,
-            KeyCode::W,
-            KeyCode::S,
-            KeyCode::D,
-            KeyCode::A,
-        ),
-        SpriteBundle {
-            sprite: Sprite {
-                custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
-                ..default()
-            },
-            texture: asset_server.load("../assets/stick.resized.png"),
-            transform: Transform {
-                translation: Vec3 {
-                    x: -700.0,
-                    y: 350.0,
-                    z: 0.0,
+fn spawn_player(
+    mut commands: Commands,
+    existing_players: Query<Entity, With<Player>>,
+    asset_server: Res<AssetServer>,
+    mut event_reader: EventReader<ResetGameEvent>,
+) {
+    for _ in event_reader.iter() {
+        for entity in &existing_players {
+            commands.entity(entity).despawn();
+        }
+        commands.spawn((
+            Player::new(
+                1,
+                String::from("player1"),
+                KeyCode::LControl,
+                KeyCode::LShift,
+                KeyCode::W,
+                KeyCode::S,
+                KeyCode::D,
+                KeyCode::A,
+            ),
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                    ..default()
                 },
-                scale: Vec3 {
-                    x: PLAYER_SIZE,
-                    y: PLAYER_SIZE,
-                    z: 0.0,
-                },
-                ..default()
-            },
-            ..default()
-        },
-        Collider,
-        Direction::Up,
-        Name::new(String::from("player1")),
-    ));
-    commands.spawn((
-        Player::new(
-            2,
-            String::from("player2"),
-            KeyCode::RControl,
-            KeyCode::RShift,
-            KeyCode::Up,
-            KeyCode::Down,
-            KeyCode::Right,
-            KeyCode::Left,
-        ),
-        SpriteBundle {
-            sprite: Sprite {
-                custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
-                ..default()
-            },
-            texture: asset_server.load("../assets/stick.resized.png"),
-            transform: Transform {
-                translation: Vec3 {
-                    x: 700.0,
-                    y: 350.0,
-                    z: 0.0,
-                },
-                scale: Vec3 {
-                    x: PLAYER_SIZE,
-                    y: PLAYER_SIZE,
-                    z: 0.0,
+                texture: asset_server.load("../assets/stick.resized.png"),
+                transform: Transform {
+                    translation: Vec3 {
+                        x: -700.0,
+                        y: 350.0,
+                        z: 0.0,
+                    },
+                    scale: Vec3 {
+                        x: PLAYER_SIZE,
+                        y: PLAYER_SIZE,
+                        z: 0.0,
+                    },
+                    ..default()
                 },
                 ..default()
             },
-            ..default()
-        },
-        Collider,
-        Direction::Up,
-        Name::new(String::from("player2")),
-    ));
-    commands.spawn((
-        Player::new(
-            3,
-            String::from("player3"),
-            KeyCode::Y,
-            KeyCode::U,
-            KeyCode::T,
-            KeyCode::G,
-            KeyCode::H,
-            KeyCode::F,
-        ),
-        SpriteBundle {
-            sprite: Sprite {
-                custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
-                ..default()
-            },
-            texture: asset_server.load("../assets/stick.resized.png"),
-            transform: Transform {
-                translation: Vec3 {
-                    x: -700.0,
-                    y: -350.0,
-                    z: 0.0,
+            Collider,
+            Direction::Up,
+            Name::new(String::from("player1")),
+        ));
+        commands.spawn((
+            Player::new(
+                2,
+                String::from("player2"),
+                KeyCode::RControl,
+                KeyCode::RShift,
+                KeyCode::Up,
+                KeyCode::Down,
+                KeyCode::Right,
+                KeyCode::Left,
+            ),
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                    ..default()
                 },
-                scale: Vec3 {
-                    x: PLAYER_SIZE,
-                    y: PLAYER_SIZE,
-                    z: 0.0,
-                },
-                ..default()
-            },
-            ..default()
-        },
-        Collider,
-        Direction::Up,
-        Name::new(String::from("player3")),
-    ));
-    commands.spawn((
-        Player::new(
-            4,
-            String::from("player4"),
-            KeyCode::O,
-            KeyCode::P,
-            KeyCode::I,
-            KeyCode::K,
-            KeyCode::L,
-            KeyCode::J,
-        ),
-        SpriteBundle {
-            sprite: Sprite {
-                custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
-                ..default()
-            },
-            texture: asset_server.load("../assets/stick.resized.png"),
-            transform: Transform {
-                translation: Vec3 {
-                    x: 700.0,
-                    y: -350.0,
-                    z: 0.0,
-                },
-                scale: Vec3 {
-                    x: PLAYER_SIZE,
-                    y: PLAYER_SIZE,
-                    z: 0.0,
+                texture: asset_server.load("../assets/stick.resized.png"),
+                transform: Transform {
+                    translation: Vec3 {
+                        x: 700.0,
+                        y: 350.0,
+                        z: 0.0,
+                    },
+                    scale: Vec3 {
+                        x: PLAYER_SIZE,
+                        y: PLAYER_SIZE,
+                        z: 0.0,
+                    },
+                    ..default()
                 },
                 ..default()
             },
-            ..default()
-        },
-        Collider,
-        Direction::Up,
-        Name::new(String::from("player4")),
-    ));
+            Collider,
+            Direction::Up,
+            Name::new(String::from("player2")),
+        ));
+        commands.spawn((
+            Player::new(
+                3,
+                String::from("player3"),
+                KeyCode::Y,
+                KeyCode::U,
+                KeyCode::T,
+                KeyCode::G,
+                KeyCode::H,
+                KeyCode::F,
+            ),
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                    ..default()
+                },
+                texture: asset_server.load("../assets/stick.resized.png"),
+                transform: Transform {
+                    translation: Vec3 {
+                        x: -700.0,
+                        y: -350.0,
+                        z: 0.0,
+                    },
+                    scale: Vec3 {
+                        x: PLAYER_SIZE,
+                        y: PLAYER_SIZE,
+                        z: 0.0,
+                    },
+                    ..default()
+                },
+                ..default()
+            },
+            Collider,
+            Direction::Up,
+            Name::new(String::from("player3")),
+        ));
+        commands.spawn((
+            Player::new(
+                4,
+                String::from("player4"),
+                KeyCode::O,
+                KeyCode::P,
+                KeyCode::I,
+                KeyCode::K,
+                KeyCode::L,
+                KeyCode::J,
+            ),
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                    ..default()
+                },
+                texture: asset_server.load("../assets/stick.resized.png"),
+                transform: Transform {
+                    translation: Vec3 {
+                        x: 700.0,
+                        y: -350.0,
+                        z: 0.0,
+                    },
+                    scale: Vec3 {
+                        x: PLAYER_SIZE,
+                        y: PLAYER_SIZE,
+                        z: 0.0,
+                    },
+                    ..default()
+                },
+                ..default()
+            },
+            Collider,
+            Direction::Up,
+            Name::new(String::from("player4")),
+        ));
+    }
 }
 
 fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>, timer: Res<Time>) {
@@ -231,6 +246,7 @@ fn collision_bullet(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
     mut collider_query: Query<(Entity, &Transform, Option<&mut Player>), With<Collider>>,
+    mut event_writer: EventWriter<UpdateUIEvent>,
 ) {
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
         let bullet_size = bullet_transform.scale.truncate();
@@ -248,6 +264,7 @@ fn collision_bullet(
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
+                                event_writer.send_default();
                                 if player.lifes > 1 {
                                     player.decrement_life();
                                     player.stunned = false;
@@ -307,6 +324,7 @@ fn collision_bullet(
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
+                                event_writer.send_default();
                                 if player.lifes > 1 {
                                     commands.entity(bullet_entity).despawn();
                                     player.decrement_life();
@@ -333,6 +351,7 @@ fn collision_powerup(
     mut commands: Commands,
     mut player_query: Query<(&Transform, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &PowerUp), With<Collider>>,
+    mut event_writer: EventWriter<UpdateUIEvent>
 ) {
     for (player_transform, mut player) in &mut player_query {
         for (collider_entity, transform, _maybe_powerup) in &mut collider_query {
@@ -343,6 +362,7 @@ fn collision_powerup(
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
+                event_writer.send_default();
                 let mut rng = rand::thread_rng();
                 let bullet_random = rng.gen_range(0..=2);
                 player.powerup = true;
@@ -357,6 +377,7 @@ fn collision_explosion(
     mut commands: Commands,
     mut player_query: Query<(Entity, &Transform, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
+    mut event_writer: EventWriter<UpdateUIEvent>,
 ) {
     for (player_entity, player_transform, mut player) in &mut player_query {
         for (collider_entity, transform, explosion) in &mut collider_query {
@@ -370,6 +391,7 @@ fn collision_explosion(
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
+                event_writer.send_default();
                 if player.lifes > 2 {
                     player.lifes -= 2;
                 } else {
@@ -652,7 +674,7 @@ fn spawn_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             for n in 1..5 {
                 parent.spawn((
                     TextBundle::from_section(
-                        format!("Player {}\nLifes: 3", n),
+                        format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
                         TextStyle {
                             font: asset_server.load("fonts/font.ttf"),
                             font_size: 30.0,
@@ -666,6 +688,26 @@ fn spawn_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                     UIText { exists: true },
                 ));
             }
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size::new(Val::Px(100.0), Val::Px(60.0)),
+                        margin: UiRect::all(Val::Px(8.0)),
+                        ..default()
+                    },
+                    background_color: Color::rgb(0.3, 0.3, 0.3).into(),
+                    ..default()
+                })
+                .with_children(|subparent| {
+                    subparent.spawn(TextBundle::from_section(
+                        "Reset",
+                        TextStyle {
+                            font: asset_server.load("fonts/font.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    ));
+                });
         });
 }
 
@@ -673,34 +715,54 @@ fn update_ui(
     mut text_query: Query<(&mut UIText, &mut Text)>,
     player_query: Query<&Player>,
     asset_server: Res<AssetServer>,
+    mut event_reader_hit: EventReader<UpdateUIEvent>,
 ) {
-    let mut player_iter = player_query.iter();
-    for (_comp, mut text_node) in &mut text_query {
-        let maybe_player = player_iter.next();
-        if !maybe_player.is_some() {
+    for _ in event_reader_hit.iter() {
+        let mut player_iter = player_query.iter();
+        for (_comp, mut text_node) in &mut text_query {
+            let maybe_player = player_iter.next();
+            if !maybe_player.is_some() {
+                *text_node = Text::from_section(
+                    "",
+                    TextStyle {
+                        font: asset_server.load("fonts/font.ttf"),
+                        font_size: 30.0,
+                        color: Color::WHITE,
+                    },
+                );
+                continue;
+            }
+            let player = maybe_player.unwrap();
+            let mut powerup = BulletType::NormalBullet;
+            if player.power_up_type.is_some() {
+                powerup = player.power_up_type.clone().unwrap();
+            }
             *text_node = Text::from_section(
-                "",
+                format!(
+                    "Player {}\nLifes: {}\nSpecial:\n{}\n\n",
+                    player.player_number, player.lifes, powerup
+                ),
                 TextStyle {
                     font: asset_server.load("fonts/font.ttf"),
                     font_size: 30.0,
                     color: Color::WHITE,
                 },
             );
-            continue;
         }
-        let player = maybe_player.unwrap();
-        let mut powerup = BulletType::NormalBullet;
-        if player.power_up_type.is_some() {    
-            powerup = player.power_up_type.clone().unwrap();
+    }
+}
+
+fn reset_clicked(
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
+    mut event_writer: EventWriter<ResetGameEvent>,
+) {
+    for interaction in &interaction_query {
+        match *interaction {
+            Interaction::Clicked => {
+                event_writer.send_default();
+            }
+            _ => (),
         }
-        *text_node = Text::from_section(
-            format!("Player {}\nLifes: {}\nSpecial:\n{}\n\n", player.player_number, player.lifes, powerup),
-            TextStyle {
-                font: asset_server.load("fonts/font.ttf"),
-                font_size: 30.0,
-                color: Color::WHITE,
-            },
-        );
     }
 }
 

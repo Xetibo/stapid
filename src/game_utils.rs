@@ -2,6 +2,21 @@ use bevy::prelude::*;
 use std::fmt;
 use bevy_inspector_egui::Inspectable;
 
+#[derive(Default)]
+pub struct ResetGameEvent {}
+
+#[derive(Default)]
+pub struct PlayerHitEvent {}
+
+#[derive(Default)]
+pub struct PlayerShootEvent {}
+
+#[derive(Default)]
+pub struct PlayerPowerUpEvent {}
+
+#[derive(Default)]
+pub struct UpdateUIEvent {}
+
 #[derive(Component, Inspectable, Clone)]
 pub enum Direction {
     Up,
