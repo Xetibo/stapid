@@ -8,7 +8,7 @@ use crate::game_utils::{
 };
 
 pub mod game_objects;
-use crate::game_objects::{Bullet, Player, PowerUp, UIText, Wall, WallBundle};
+use crate::game_objects::{Bullet, Player, PowerUp, UINode, UIText, Wall, WallBundle};
 
 pub mod constants;
 use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, PLAYER_SIZE, RIGHT_BOUND, TOP_BOUND};
@@ -38,11 +38,10 @@ fn main() {
         .add_event::<UpdateUIEvent>()
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_level_1)
-        .add_startup_system(spawn_ui)
         .add_startup_system(spawn_camera)
         .add_system(reset_clicked)
         .add_system(spawn_player)
-        .add_system(update_ui)
+        .add_system(spawn_ui)
         .add_system(spawn_powerup)
         .add_system(move_all_players)
         .add_system(player_shoot)
@@ -52,6 +51,7 @@ fn main() {
         .add_system(collision_powerup)
         .add_system(collision_explosion)
         .add_system(tick_timer)
+        .add_system(update_ui)
         .run();
 }
 
@@ -353,6 +353,7 @@ fn player_shoot(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut players: Query<(&mut Player, &Transform)>,
+    mut event_writer: EventWriter<UpdateUIEvent>,
     keys: Res<Input<KeyCode>>,
 ) {
     for (mut player, transform) in &mut players {
@@ -397,6 +398,8 @@ fn player_shoot(
                 },
             ));
             player.powerup = false;
+            player.power_up_type = None;
+            event_writer.send_default();
         }
     }
 }
@@ -434,70 +437,87 @@ fn spawn_walls(mut commands: Commands) {
     commands.spawn(WallBundle::new(Direction::Left));
 }
 
-fn spawn_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands
-        .spawn(NodeBundle {
-            style: Style {
-                size: Size::new(Val::Px(150.0), Val::Percent(100.0)),
-                border: UiRect::all(Val::Px(2.0)),
-                flex_direction: FlexDirection::Column,
-                flex_wrap: FlexWrap::NoWrap,
-                overflow: Overflow::Visible,
-                ..default()
-            },
-            background_color: Color::rgba(0.0, 0.0, 0.0, 0.0).into(),
-            ..default()
-        })
-        .with_children(|parent| {
-            for n in 1..5 {
-                parent.spawn((
-                    TextBundle::from_section(
-                        format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
-                        TextStyle {
-                            font: asset_server.load("fonts/font.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
-                    )
-                    .with_style(Style {
-                        margin: UiRect::all(Val::Px(1.0)),
-                        ..default()
-                    }),
-                    UIText { exists: true },
-                ));
+fn spawn_ui(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut event_reader: EventReader<ResetGameEvent>,
+    existing_node: Query<Entity, With<UINode>>,
+    existing_text: Query<Entity, With<UIText>>,
+) {
+    for _ in event_reader.iter() {
+        for entity in &existing_node {
+            for entity_text in &existing_text {
+                commands.entity(entity_text).despawn();
             }
-            parent
-                .spawn(ButtonBundle {
+            commands.entity(entity).despawn();
+        }
+        commands
+            .spawn((
+                NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Px(100.0), Val::Px(60.0)),
-                        margin: UiRect::all(Val::Px(8.0)),
+                        size: Size::new(Val::Px(150.0), Val::Percent(100.0)),
+                        border: UiRect::all(Val::Px(2.0)),
+                        flex_direction: FlexDirection::Column,
+                        flex_wrap: FlexWrap::NoWrap,
+                        overflow: Overflow::Visible,
                         ..default()
                     },
-                    background_color: Color::rgb(0.3, 0.3, 0.3).into(),
+                    background_color: Color::rgba(0.0, 0.0, 0.0, 0.0).into(),
                     ..default()
-                })
-                .with_children(|subparent| {
-                    subparent.spawn(TextBundle::from_section(
-                        "Reset",
-                        TextStyle {
-                            font: asset_server.load("fonts/font.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
+                },
+                UINode {},
+            ))
+            .with_children(|parent| {
+                for n in 1..5 {
+                    parent.spawn((
+                        TextBundle::from_section(
+                            format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
+                            TextStyle {
+                                font: asset_server.load("fonts/font.ttf"),
+                                font_size: 30.0,
+                                color: Color::WHITE,
+                            },
+                        )
+                        .with_style(Style {
+                            margin: UiRect::all(Val::Px(1.0)),
+                            ..default()
+                        }),
+                        UIText {},
                     ));
-                });
-        });
+                }
+                parent
+                    .spawn(ButtonBundle {
+                        style: Style {
+                            size: Size::new(Val::Px(100.0), Val::Px(60.0)),
+                            margin: UiRect::all(Val::Px(8.0)),
+                            ..default()
+                        },
+                        background_color: Color::rgb(0.3, 0.3, 0.3).into(),
+                        ..default()
+                    })
+                    .with_children(|subparent| {
+                        subparent.spawn(TextBundle::from_section(
+                            "Reset",
+                            TextStyle {
+                                font: asset_server.load("fonts/font.ttf"),
+                                font_size: 30.0,
+                                color: Color::WHITE,
+                            },
+                        ));
+                    });
+            });
+    }
 }
 
 fn update_ui(
-    mut text_query: Query<(&mut UIText, &mut Text)>,
+    mut text_query: Query<&mut Text, With<UIText>>,
     player_query: Query<&Player>,
     asset_server: Res<AssetServer>,
     mut event_reader_hit: EventReader<UpdateUIEvent>,
 ) {
     for _ in event_reader_hit.iter() {
         let mut player_iter = player_query.iter();
-        for (_comp, mut text_node) in &mut text_query {
+        for mut text_node in &mut text_query {
             let maybe_player = player_iter.next();
             if !maybe_player.is_some() {
                 *text_node = Text::from_section(
@@ -533,11 +553,13 @@ fn update_ui(
 fn reset_clicked(
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
     mut event_writer: EventWriter<ResetGameEvent>,
+    // mut event_writer_ui: EventWriter<UpdateUIEvent>
 ) {
     for interaction in &interaction_query {
         match *interaction {
             Interaction::Clicked => {
                 event_writer.send_default();
+                // event_writer_ui.send_default();
             }
             _ => (),
         }

@@ -137,7 +137,6 @@ pub fn collision_bullet(
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
-                                event_writer.send_default();
                                 if player.lifes > 1 {
                                     player.decrement_life();
                                     player.stunned = false;
@@ -150,6 +149,7 @@ pub fn collision_bullet(
                                 } else {
                                     commands.entity(collider_entity).despawn();
                                 }
+                                event_writer.send_default();
                             }
                         }
                     }
@@ -197,7 +197,6 @@ pub fn collision_bullet(
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
-                                event_writer.send_default();
                                 if player.lifes > 1 {
                                     commands.entity(bullet_entity).despawn();
                                     player.decrement_life();
@@ -211,6 +210,7 @@ pub fn collision_bullet(
                                 } else {
                                     commands.entity(collider_entity).despawn();
                                 }
+                                event_writer.send_default();
                             }
                         }
                     }

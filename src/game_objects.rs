@@ -54,9 +54,10 @@ pub struct WallBundle {
 pub struct Wall {}
 
 #[derive(Component)]
-pub struct UIText {
-    pub exists: bool,
-}
+pub struct UINode {}
+
+#[derive(Component)]
+pub struct UIText {}
 
 impl Player {
     pub fn new(
