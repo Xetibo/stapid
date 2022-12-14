@@ -3,8 +3,7 @@ use crate::game_utils::{
     BulletType, Collider, DirectionHelper, HitCooldownTimer, TimerType, UpdateUIEvent,
 };
 use bevy::{
-    prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision,
-    sprite::MaterialMesh2dBundle, utils::Duration,
+    prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision, utils::Duration,
 };
 use rand::prelude::*;
 
@@ -15,7 +14,7 @@ pub fn collision_explosion(
     mut event_writer: EventWriter<UpdateUIEvent>,
 ) {
     for (player_entity, player_transform, mut player) in &mut player_query {
-        for (collider_entity, transform, explosion) in &mut collider_query {
+        for (_collider_entity, transform, explosion) in &mut collider_query {
             let collision = collide(
                 transform.translation,
                 Vec2 {
@@ -33,7 +32,8 @@ pub fn collision_explosion(
                     commands.entity(player_entity).despawn();
                 }
             }
-            commands.entity(collider_entity).despawn();
+            // we need another way to despawn.
+            // commands.entity(collider_entity).despawn();
         }
     }
 }
@@ -120,11 +120,10 @@ pub fn collision_player(
 
 pub fn collision_bullet(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
     mut collider_query: Query<(Entity, &Transform, Option<&mut Player>), With<Collider>>,
     mut event_writer: EventWriter<UpdateUIEvent>,
+    asset_server: ResMut<AssetServer>,
 ) {
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
         let bullet_size = bullet_transform.scale.truncate();
@@ -176,12 +175,21 @@ pub fn collision_bullet(
                         commands.entity(bullet_entity).despawn();
                         commands.spawn((
                             Explosion { radius: 50.0 },
-                            MaterialMesh2dBundle {
-                                mesh: meshes.add(shape::Circle::new(50.0).into()).into(),
-                                material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                                transform: Transform::from_translation(
-                                    bullet_transform.translation,
-                                ),
+                            SpriteBundle {
+                                sprite: Sprite {
+                                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                                    ..default()
+                                },
+                                texture: asset_server.load("../assets/explosion.png"),
+                                transform: Transform {
+                                    translation: bullet_transform.translation,
+                                    scale: Vec3 {
+                                        x: 100.0,
+                                        y: 100.0,
+                                        z: 1.0,
+                                    },
+                                    ..default()
+                                },
                                 ..default()
                             },
                             Collider,
