@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, utils::Duration};
+use bevy::{prelude::*, utils::Duration};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 
 pub mod game_utils;
@@ -81,7 +81,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/stick.resized.png"),
+                texture: asset_server.load("../assets/player.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
@@ -117,7 +117,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/stick.resized.png"),
+                texture: asset_server.load("../assets/player.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
@@ -153,7 +153,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/stick.resized.png"),
+                texture: asset_server.load("../assets/player.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
@@ -189,7 +189,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/stick.resized.png"),
+                texture: asset_server.load("../assets/player.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
@@ -354,10 +354,9 @@ fn move_all_players(
 
 fn player_shoot(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     mut players: Query<(&mut Player, &Transform)>,
     mut event_writer: EventWriter<UpdateUIEvent>,
+    asset_server: ResMut<AssetServer>,
     keys: Res<Input<KeyCode>>,
 ) {
     for (mut player, transform) in &mut players {
@@ -366,17 +365,26 @@ fn player_shoot(
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
                 Bullet::normal_bullet(player.direction.clone()),
-                MaterialMesh2dBundle {
-                    mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
-                    material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
-                    transform: Transform::from_translation(
-                        transform.translation
+                SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                        ..default()
+                    },
+                    texture: asset_server.load("../assets/bullet.png"),
+                    transform: Transform {
+                        translation: transform.translation
                             + Vec3 {
                                 x: bullet_x,
                                 y: bullet_y,
                                 z: 0.0,
                             },
-                    ),
+                        scale: Vec3 {
+                            x: 30.0,
+                            y: 30.0,
+                            z: 1.0,
+                        },
+                        ..default()
+                    },
                     ..default()
                 },
             ));
@@ -390,17 +398,30 @@ fn player_shoot(
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
             commands.spawn((
                 Bullet::bullet_from_enum(player.power_up_type.as_ref(), &player.direction),
-                MaterialMesh2dBundle {
-                    mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
-                    material: materials.add(Color::rgb(0.0, 0.0, 1.0).into()),
-                    transform: Transform::from_translation(
-                        transform.translation
+                SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                        ..default()
+                    },
+                    texture: match player.power_up_type.clone().unwrap() {
+                        BulletType::IceBullet => asset_server.load("../assets/freezing_bullet.png"),
+                        BulletType::ExplosiveBullet => asset_server.load("../assets/granate.png"),
+                        _ => asset_server.load("../assets/bouncy_ball.png"),
+                    },
+                    transform: Transform {
+                        translation: transform.translation
                             + Vec3 {
                                 x: bullet_x,
                                 y: bullet_y,
                                 z: 0.0,
                             },
-                    ),
+                        scale: Vec3 {
+                            x: 30.0,
+                            y: 30.0,
+                            z: 0.0,
+                        },
+                        ..default()
+                    },
                     ..default()
                 },
             ));
@@ -413,8 +434,7 @@ fn player_shoot(
 
 fn spawn_powerup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: ResMut<AssetServer>,
     power_up_query: Query<Entity, With<PowerUp>>,
 ) {
     let mut count = 0;
@@ -426,10 +446,21 @@ fn spawn_powerup(
             PowerUp {
                 pickup_type: BulletType::IceBullet,
             },
-            MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Circle::new(10.0).into()).into(),
-                material: materials.add(Color::rgb(0.0, 1.0, 0.0).into()),
-                transform: Transform::from_translation(PowerUp::generate_random_position()),
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                    ..default()
+                },
+                texture: asset_server.load("../assets/coin.png"),
+                transform: Transform {
+                    translation: PowerUp::generate_random_position(),
+                    scale: Vec3 {
+                        x: 40.0,
+                        y: 40.0,
+                        z: 0.0,
+                    },
+                    ..default()
+                },
                 ..default()
             },
             Collider,
