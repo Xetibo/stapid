@@ -137,7 +137,7 @@ impl Player {
             },
             _ => match &self.direction.direction_y {
                 Direction::Up => "../assets/player_up.png",
-                Direction::Down => "../assets/player_up.png",
+                Direction::Down => "../assets/player_down.png",
                 _ => "",
             },
         }
