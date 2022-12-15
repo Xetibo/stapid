@@ -1,5 +1,7 @@
 use bevy::{prelude::*, utils::Duration};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
+use game_objects::Totem;
+use game_utils::PlayerDeadEvent;
 
 pub mod game_utils;
 use crate::game_utils::{
@@ -21,26 +23,33 @@ use level1::spawn_level_1;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                title: String::from("stapid"),
-                resizable: true,
-                decorations: false,
-                ..default()
-            },
-            ..default()
-        }).set(ImagePlugin::default_nearest()))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    window: WindowDescriptor {
+                        title: String::from("stapid"),
+                        resizable: true,
+                        decorations: false,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .set(ImagePlugin::default_nearest()),
+        )
         .add_plugin(WorldInspectorPlugin::new())
         .register_inspectable::<Player>()
         .register_inspectable::<Bullet>()
         .register_inspectable::<Wall>()
         .add_event::<ResetGameEvent>()
         .add_event::<UpdateUIEvent>()
+        .add_event::<PlayerDeadEvent>()
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_level_1)
         .add_startup_system(spawn_camera)
         .add_system(reset_clicked)
+        .add_system(clear_totems)
         .add_system(spawn_player)
+        .add_system(spawn_totem)
         .add_system(spawn_ui)
         .add_system(spawn_powerup)
         .add_system(move_all_players)
@@ -54,6 +63,18 @@ fn main() {
         .add_system(animate_sprite)
         .add_system(update_ui)
         .run();
+}
+
+fn clear_totems(
+    mut commands: Commands,
+    totems: Query<Entity, With<Totem>>,
+    mut event_reader: EventReader<ResetGameEvent>,
+) {
+    for _ in event_reader.iter() {
+        for entity in &totems {
+            commands.entity(entity).despawn();
+        }
+    }
 }
 
 fn spawn_player(
@@ -386,6 +407,38 @@ fn move_all_players(
                 player.direction.direction_x = Direction::Left;
                 player.direction.direction_y = Direction::None;
             }
+        }
+    }
+}
+
+fn spawn_totem(
+    mut commands: Commands,
+    players: Query<(Entity, &Transform, &Player)>,
+    asset_server: ResMut<AssetServer>,
+    mut event_reader: EventReader<PlayerDeadEvent>,
+) {
+    for _ in event_reader.iter() {
+        for (entity, transform, player) in players.iter() {
+            if player.lifes > 1 {
+                continue;
+            }
+            commands.entity(entity).despawn();
+            commands.spawn((
+                Totem {},
+                SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                        ..default()
+                    },
+                    texture: asset_server.load("../assets/dead.png"),
+                    transform: Transform {
+                        translation: transform.translation,
+                        scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 1.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+            ));
         }
     }
 }

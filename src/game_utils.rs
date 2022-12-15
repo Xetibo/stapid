@@ -17,6 +17,9 @@ pub struct PlayerPowerUpEvent {}
 #[derive(Default)]
 pub struct UpdateUIEvent {}
 
+#[derive(Default)]
+pub struct PlayerDeadEvent {}
+
 #[derive(Component, Inspectable, Clone)]
 pub enum Direction {
     Up,

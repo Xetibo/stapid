@@ -1,7 +1,7 @@
 use crate::game_objects::{Bullet, Explosion, Player, PowerUp, Wall};
 use crate::game_utils::{
-    AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, TimerType,
-    UpdateUIEvent,
+    AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerDeadEvent,
+    TimerType, UpdateUIEvent,
 };
 use bevy::{
     prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision, utils::Duration,
@@ -12,6 +12,7 @@ pub fn collision_explosion(
     mut commands: Commands,
     mut player_query: Query<(Entity, &Transform, &mut Handle<Image>, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
+    mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
     mut event_writer: EventWriter<UpdateUIEvent>,
     asset_server: ResMut<AssetServer>,
 ) {
@@ -38,7 +39,7 @@ pub fn collision_explosion(
                         timer_type: TimerType::Invulnerable,
                     },));
                 } else {
-                    commands.entity(player_entity).despawn();
+                    player_dead_event_writer.send_default();
                 }
             }
         }
@@ -133,6 +134,7 @@ pub fn collision_bullet(
         With<Collider>,
     >,
     mut event_writer: EventWriter<UpdateUIEvent>,
+    mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
     asset_server: ResMut<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
@@ -165,7 +167,7 @@ pub fn collision_bullet(
                                         timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
-                                    commands.entity(collider_entity).despawn();
+                                    player_dead_event_writer.send_default();
                                 }
                                 event_writer.send_default();
                             }
@@ -251,7 +253,7 @@ pub fn collision_bullet(
                                         timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
-                                    commands.entity(collider_entity).despawn();
+                                    player_dead_event_writer.send_default();
                                 }
                                 event_writer.send_default();
                             }

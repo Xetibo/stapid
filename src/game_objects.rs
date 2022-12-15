@@ -51,6 +51,10 @@ pub struct WallBundle {
     pub collider: Collider,
 }
 
+// create totem pls
+#[derive(Component)]
+pub struct Totem {}
+
 #[derive(Component, Inspectable)]
 pub struct Wall {}
 
