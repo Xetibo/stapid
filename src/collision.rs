@@ -179,7 +179,7 @@ pub fn collision_bullet(
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false && player.stunned == false {
                                 player.stunned = true;
-                                *player_sprite = asset_server.load("../assets/frozen_effect.png");
+                                *player_sprite = asset_server.load("../assets/player_frozen.png");
                                 commands.spawn((HitCooldownTimer {
                                     timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
                                     associated_player: player.name.clone(),
