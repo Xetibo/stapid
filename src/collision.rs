@@ -121,13 +121,13 @@ pub fn collision_player(
 pub fn collision_bullet(
     mut commands: Commands,
     mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
-    mut collider_query: Query<(Entity, &Transform, Option<&mut Player>), With<Collider>>,
+    mut collider_query: Query<(Entity, &Transform, &mut Handle<Image>, Option<&mut Player>), With<Collider>>,
     mut event_writer: EventWriter<UpdateUIEvent>,
     asset_server: ResMut<AssetServer>,
 ) {
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
         let bullet_size = bullet_transform.scale.truncate();
-        for (collider_entity, transform, mut maybe_player) in &mut collider_query {
+        for (collider_entity, transform, mut player_sprite, mut maybe_player) in &mut collider_query {
             let collision = collide(
                 bullet_transform.translation,
                 bullet_size,
@@ -144,6 +144,7 @@ pub fn collision_bullet(
                                 if player.lifes > 1 {
                                     player.decrement_life();
                                     player.stunned = false;
+                                    *player_sprite = asset_server.load("../assets/player.png");
                                     player.invulnerable = true;
                                     commands.spawn((HitCooldownTimer {
                                         timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
@@ -163,6 +164,7 @@ pub fn collision_bullet(
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false && player.stunned == false {
                                 player.stunned = true;
+                                *player_sprite = asset_server.load("../assets/frozen_effect.png");
                                 commands.spawn((HitCooldownTimer {
                                     timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
                                     associated_player: player.name.clone(),
@@ -172,6 +174,7 @@ pub fn collision_bullet(
                         }
                     }
                     BulletType::ExplosiveBullet => {
+                        *player_sprite = asset_server.load("../assets/player.png");
                         commands.entity(bullet_entity).despawn();
                         commands.spawn((
                             Explosion { radius: 50.0 },
@@ -196,6 +199,7 @@ pub fn collision_bullet(
                         ));
                     }
                     BulletType::BouncyBullet => {
+                        *player_sprite = asset_server.load("../assets/player.png");
                         let direction_collision = collision.unwrap();
                         bullet.direction = match direction_collision {
                             Collision::Left | Collision::Right => DirectionHelper {

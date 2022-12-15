@@ -237,17 +237,19 @@ fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>, timer: Res<Ti
 
 fn tick_timer(
     mut commands: Commands,
-    mut player_query: Query<&mut Player>,
+    mut player_query: Query<(&mut Player, &mut Handle<Image>)>,
     mut timer_query: Query<(Entity, &mut HitCooldownTimer)>,
+    asset_server: Res<AssetServer>,
     time: Res<Time>,
 ) {
     for (entity, mut hit_timer) in &mut timer_query {
         hit_timer.timer.tick(time.delta());
-        for mut player in &mut player_query {
+        for (mut player, mut player_sprite) in &mut player_query {
             if hit_timer.timer.finished() && hit_timer.associated_player == player.name {
                 match hit_timer.timer_type {
                     TimerType::Stun => {
                         player.stunned = false;
+                        *player_sprite = asset_server.load("../assets/player.png");
                         commands.entity(entity).despawn();
                     }
                     TimerType::Invulnerable => {
