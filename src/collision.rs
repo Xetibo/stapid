@@ -10,13 +10,13 @@ use rand::prelude::*;
 
 pub fn collision_explosion(
     mut commands: Commands,
-    mut player_query: Query<(Entity, &Transform, &mut Handle<Image>, &mut Player)>,
+    mut player_query: Query<(&Transform, &mut Handle<Image>, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
     mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
     mut event_writer: EventWriter<UpdateUIEvent>,
     asset_server: ResMut<AssetServer>,
 ) {
-    for (player_entity, player_transform, mut player_sprite, mut player) in &mut player_query {
+    for (player_transform, mut player_sprite, mut player) in &mut player_query {
         if player.invulnerable {
             continue;
         }
@@ -130,7 +130,7 @@ pub fn collision_bullet(
     mut commands: Commands,
     mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
     mut collider_query: Query<
-        (Entity, &Transform, &mut Handle<Image>, Option<&mut Player>),
+        (&Transform, &mut Handle<Image>, Option<&mut Player>),
         With<Collider>,
     >,
     mut event_writer: EventWriter<UpdateUIEvent>,
@@ -140,8 +140,7 @@ pub fn collision_bullet(
 ) {
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
         let bullet_size = bullet_transform.scale.truncate();
-        for (collider_entity, transform, mut player_sprite, mut maybe_player) in &mut collider_query
-        {
+        for (transform, mut player_sprite, mut maybe_player) in &mut collider_query {
             let collision = collide(
                 bullet_transform.translation,
                 bullet_size,

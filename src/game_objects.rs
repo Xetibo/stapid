@@ -74,6 +74,7 @@ impl Player {
         entered_downbind: KeyCode,
         entered_rightbind: KeyCode,
         entered_leftbind: KeyCode,
+        entered_direction: DirectionHelper,
     ) -> Player {
         Player {
             player_number: number,
@@ -84,10 +85,7 @@ impl Player {
             powerup: false,
             shoot: true,
             speed: 2.5,
-            direction: DirectionHelper {
-                direction_y: Direction::Up,
-                direction_x: Direction::Right,
-            },
+            direction: entered_direction,
             direction_block: DirectionBlock {
                 up: false,
                 down: false,

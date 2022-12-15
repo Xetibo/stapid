@@ -1,16 +1,14 @@
 use bevy::{prelude::*, utils::Duration};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
-use game_objects::Totem;
-use game_utils::PlayerDeadEvent;
 
 pub mod game_utils;
 use crate::game_utils::{
-    AnimationTimer, BulletType, Collider, Direction, HitCooldownTimer, Name, ResetGameEvent,
-    TimerType, UpdateUIEvent,
+    AnimationTimer, BulletType, Collider, Direction, DirectionHelper, HitCooldownTimer, Name,
+    ResetGameEvent, TimerType, UpdateUIEvent, PlayerDeadEvent
 };
 
 pub mod game_objects;
-use crate::game_objects::{Bullet, Player, PowerUp, UINode, UIText, Wall, WallBundle};
+use crate::game_objects::{Bullet, Player, PowerUp, UINode, UIText, Wall, WallBundle, Totem};
 
 pub mod constants;
 use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, PLAYER_SIZE, RIGHT_BOUND, TOP_BOUND};
@@ -97,6 +95,10 @@ fn spawn_player(
                 KeyCode::S,
                 KeyCode::D,
                 KeyCode::A,
+                DirectionHelper {
+                    direction_x: Direction::Right,
+                    direction_y: Direction::None,
+                },
             ),
             SpriteBundle {
                 sprite: Sprite {
@@ -120,7 +122,7 @@ fn spawn_player(
                 ..default()
             },
             Collider,
-            Direction::Up,
+            Direction::Right,
             Name::new(String::from("player1")),
         ));
         commands.spawn((
@@ -133,6 +135,10 @@ fn spawn_player(
                 KeyCode::Down,
                 KeyCode::Right,
                 KeyCode::Left,
+                DirectionHelper {
+                    direction_x: Direction::Left,
+                    direction_y: Direction::None,
+                },
             ),
             SpriteBundle {
                 sprite: Sprite {
@@ -156,7 +162,7 @@ fn spawn_player(
                 ..default()
             },
             Collider,
-            Direction::Up,
+            Direction::Left,
             Name::new(String::from("player2")),
         ));
         commands.spawn((
@@ -169,6 +175,10 @@ fn spawn_player(
                 KeyCode::G,
                 KeyCode::H,
                 KeyCode::F,
+                DirectionHelper {
+                    direction_x: Direction::Right,
+                    direction_y: Direction::None,
+                },
             ),
             SpriteBundle {
                 sprite: Sprite {
@@ -192,7 +202,7 @@ fn spawn_player(
                 ..default()
             },
             Collider,
-            Direction::Up,
+            Direction::Right,
             Name::new(String::from("player3")),
         ));
         commands.spawn((
@@ -205,6 +215,10 @@ fn spawn_player(
                 KeyCode::K,
                 KeyCode::L,
                 KeyCode::J,
+                DirectionHelper {
+                    direction_x: Direction::Left,
+                    direction_y: Direction::None,
+                },
             ),
             SpriteBundle {
                 sprite: Sprite {
@@ -228,7 +242,7 @@ fn spawn_player(
                 ..default()
             },
             Collider,
-            Direction::Up,
+            Direction::Left,
             Name::new(String::from("player4")),
         ));
     }
