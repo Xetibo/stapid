@@ -82,7 +82,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player.png"),
+                texture: asset_server.load("../assets/player_right.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
@@ -118,7 +118,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player.png"),
+                texture: asset_server.load("../assets/player_left.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
@@ -154,7 +154,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player.png"),
+                texture: asset_server.load("../assets/player_right.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
@@ -190,7 +190,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player.png"),
+                texture: asset_server.load("../assets/player_left.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
