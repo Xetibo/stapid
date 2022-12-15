@@ -39,6 +39,7 @@ pub fn collision_explosion(
                         timer_type: TimerType::Invulnerable,
                     },));
                 } else {
+                    player.lifes -= 2;
                     player_dead_event_writer.send_default();
                 }
             }
@@ -166,6 +167,7 @@ pub fn collision_bullet(
                                         timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
+                                    player.lifes -= 1;
                                     player_dead_event_writer.send_default();
                                 }
                                 event_writer.send_default();
@@ -252,6 +254,7 @@ pub fn collision_bullet(
                                         timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
+                                    player.lifes -= 1;
                                     player_dead_event_writer.send_default();
                                 }
                                 event_writer.send_default();
