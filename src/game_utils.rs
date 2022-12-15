@@ -84,6 +84,12 @@ pub struct HitCooldownTimer {
     pub timer_type: TimerType,
 }
 
+#[derive(Component)]
+pub struct AnimationTimer {
+    pub timer: Timer,
+    pub counter: i32,
+}
+
 #[derive(Component, Inspectable)]
 pub struct Bindings {
     #[inspectable(ignore)]

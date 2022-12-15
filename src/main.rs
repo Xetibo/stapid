@@ -3,8 +3,8 @@ use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 
 pub mod game_utils;
 use crate::game_utils::{
-    BulletType, Collider, Direction, HitCooldownTimer, Name, ResetGameEvent, TimerType,
-    UpdateUIEvent,
+    AnimationTimer, BulletType, Collider, Direction, HitCooldownTimer, Name, ResetGameEvent,
+    TimerType, UpdateUIEvent,
 };
 
 pub mod game_objects;
@@ -29,7 +29,7 @@ fn main() {
                 ..default()
             },
             ..default()
-        }))
+        }).set(ImagePlugin::default_nearest()))
         .add_plugin(WorldInspectorPlugin::new())
         .register_inspectable::<Player>()
         .register_inspectable::<Bullet>()
@@ -51,6 +51,7 @@ fn main() {
         .add_system(collision_powerup)
         .add_system(collision_explosion)
         .add_system(tick_timer)
+        .add_system(animate_sprite)
         .add_system(update_ui)
         .run();
 }
@@ -262,6 +263,32 @@ fn tick_timer(
                     }
                 }
             }
+        }
+    }
+}
+
+fn animate_sprite(
+    mut commands: Commands,
+    time: Res<Time>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    mut query: Query<(
+        Entity,
+        &mut AnimationTimer,
+        &mut TextureAtlasSprite,
+        &Handle<TextureAtlas>,
+    )>,
+) {
+    for (entity, mut timer, mut sprite, texture_atlas_handle) in &mut query {
+        timer.timer.tick(time.delta());
+        if timer.timer.just_finished() {
+            if timer.counter < 1 {
+                commands.entity(entity).despawn();
+                return;
+            }
+
+            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+            sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
+            timer.counter -= 1;
         }
     }
 }
