@@ -250,7 +250,7 @@ fn tick_timer(
                 match hit_timer.timer_type {
                     TimerType::Stun => {
                         player.stunned = false;
-                        *player_sprite = asset_server.load("../assets/player.png");
+                        *player_sprite = asset_server.load(player.get_direction_sprite());
                         commands.entity(entity).despawn();
                     }
                     TimerType::Invulnerable => {
