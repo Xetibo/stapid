@@ -13,16 +13,16 @@ pub fn collision_explosion(
     mut player_query: Query<(Entity, &Transform, &mut Handle<Image>, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
     mut event_writer: EventWriter<UpdateUIEvent>,
-    asset_server: ResMut<AssetServer>
+    asset_server: ResMut<AssetServer>,
 ) {
     for (player_entity, player_transform, mut player_sprite, mut player) in &mut player_query {
-        for (_collider_entity, transform, explosion) in &mut collider_query {
+        if player.invulnerable {
+            continue;
+        }
+        for (_collider_entity, transform, _explosion) in &mut collider_query {
             let collision = collide(
                 transform.translation,
-                Vec2 {
-                    x: explosion.radius,
-                    y: explosion.radius,
-                },
+                transform.scale.truncate(),
                 player_transform.translation,
                 player_transform.scale.truncate(),
             );
@@ -31,12 +31,16 @@ pub fn collision_explosion(
                 event_writer.send_default();
                 if player.lifes > 2 {
                     player.lifes -= 2;
+                    player.invulnerable = true;
+                    commands.spawn((HitCooldownTimer {
+                        timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                        associated_player: player.name.clone(),
+                        timer_type: TimerType::Invulnerable,
+                    },));
                 } else {
                     commands.entity(player_entity).despawn();
                 }
             }
-            // we need another way to despawn.
-            // commands.entity(collider_entity).despawn();
         }
     }
 }
@@ -195,13 +199,17 @@ pub fn collision_bullet(
                         let texture_atlas_handle = texture_atlases.add(texture_atlas);
                         commands.spawn((
                             SpriteSheetBundle {
+                                sprite: TextureAtlasSprite {
+                                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                                    ..default()
+                                },
                                 texture_atlas: texture_atlas_handle,
                                 transform: Transform {
                                     translation: bullet_transform.translation,
                                     scale: Vec3 {
-                                        x: 6.0,
-                                        y: 6.0,
-                                        z: 0.0,
+                                        x: 150.0,
+                                        y: 150.0,
+                                        z: 1.0,
                                     },
                                     ..default()
                                 },
@@ -211,6 +219,8 @@ pub fn collision_bullet(
                                 timer: Timer::from_seconds(0.05, TimerMode::Repeating),
                                 counter: 2,
                             },
+                            Explosion { radius: 50.0 },
+                            Collider,
                         ));
                     }
                     BulletType::BouncyBullet => {
