@@ -167,7 +167,7 @@ pub fn collision_bullet(
                                         timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
-                                    player.lifes -= 1;
+                                    player.decrement_life();
                                     player_dead_event_writer.send_default();
                                 }
                                 event_writer.send_default();
@@ -254,7 +254,7 @@ pub fn collision_bullet(
                                         timer_type: TimerType::Invulnerable,
                                     },));
                                 } else {
-                                    player.lifes -= 1;
+                                    player.decrement_life();
                                     player_dead_event_writer.send_default();
                                 }
                                 event_writer.send_default();

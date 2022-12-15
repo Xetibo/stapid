@@ -430,6 +430,7 @@ fn spawn_totem(
     players: Query<(Entity, &Transform, &Player)>,
     asset_server: ResMut<AssetServer>,
     mut event_reader: EventReader<PlayerDeadEvent>,
+    mut event_writer: EventWriter<UpdateUIEvent>,
 ) {
     for _ in event_reader.iter() {
         for (entity, transform, player) in players.iter() {
@@ -453,6 +454,7 @@ fn spawn_totem(
                     ..default()
                 },
             ));
+            event_writer.send_default();
         }
     }
 }
