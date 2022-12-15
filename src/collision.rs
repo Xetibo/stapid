@@ -1,7 +1,7 @@
 use crate::game_objects::{Bullet, Explosion, Player, PowerUp, Wall};
 use crate::game_utils::{
     AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerDeadEvent,
-    TimerType, UpdateUIEvent,
+    PlayerHitEvent, TimerType, UpdateUIEvent,
 };
 use bevy::{
     prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision, utils::Duration,
@@ -14,6 +14,7 @@ pub fn collision_explosion(
     mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
     mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
     mut event_writer: EventWriter<UpdateUIEvent>,
+    mut event_writer_player_hit: EventWriter<PlayerHitEvent>,
     asset_server: ResMut<AssetServer>,
 ) {
     for (player_transform, mut player_sprite, mut player) in &mut player_query {
@@ -31,6 +32,7 @@ pub fn collision_explosion(
                 *player_sprite = asset_server.load(player.get_direction_sprite());
                 event_writer.send_default();
                 if player.lifes > 2 {
+                    event_writer_player_hit.send_default();
                     player.lifes -= 2;
                     player.invulnerable = true;
                     commands.spawn((HitCooldownTimer {
@@ -136,6 +138,7 @@ pub fn collision_bullet(
     >,
     mut event_writer: EventWriter<UpdateUIEvent>,
     mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
+    mut event_writer_player_hit: EventWriter<PlayerHitEvent>,
     asset_server: ResMut<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
@@ -156,6 +159,7 @@ pub fn collision_bullet(
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
                                 if player.lifes > 1 {
+                                    event_writer_player_hit.send_default();
                                     player.decrement_life();
                                     player.stunned = false;
                                     *player_sprite =
@@ -244,6 +248,7 @@ pub fn collision_bullet(
                             *player_sprite = asset_server.load(player.get_direction_sprite());
                             if player.invulnerable == false {
                                 if player.lifes > 1 {
+                                    event_writer_player_hit.send_default();
                                     commands.entity(bullet_entity).despawn();
                                     player.decrement_life();
                                     player.stunned = false;

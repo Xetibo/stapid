@@ -93,6 +93,13 @@ pub struct AnimationTimer {
     pub counter: i32,
 }
 
+#[derive(Component)]
+pub struct InvulnerableBlinkTimer {
+    pub timer: Timer,
+    pub color: bool,
+    pub associated_player: String,
+}
+
 #[derive(Component, Inspectable)]
 pub struct Bindings {
     #[inspectable(ignore)]

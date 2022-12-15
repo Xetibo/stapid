@@ -1,14 +1,15 @@
 use bevy::{prelude::*, utils::Duration};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
+use game_utils::PlayerHitEvent;
 
 pub mod game_utils;
 use crate::game_utils::{
-    AnimationTimer, BulletType, Collider, Direction, DirectionHelper, HitCooldownTimer, Name,
-    ResetGameEvent, TimerType, UpdateUIEvent, PlayerDeadEvent
+    AnimationTimer, BulletType, Collider, Direction, DirectionHelper, HitCooldownTimer,
+    InvulnerableBlinkTimer, Name, PlayerDeadEvent, ResetGameEvent, TimerType, UpdateUIEvent,
 };
 
 pub mod game_objects;
-use crate::game_objects::{Bullet, Player, PowerUp, UINode, UIText, Wall, WallBundle, Totem};
+use crate::game_objects::{Bullet, Player, PowerUp, Totem, UINode, UIText, Wall, WallBundle};
 
 pub mod constants;
 use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, PLAYER_SIZE, RIGHT_BOUND, TOP_BOUND};
@@ -41,6 +42,7 @@ fn main() {
         .add_event::<ResetGameEvent>()
         .add_event::<UpdateUIEvent>()
         .add_event::<PlayerDeadEvent>()
+        .add_event::<PlayerHitEvent>()
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_level_1)
         .add_startup_system(spawn_camera)
@@ -50,6 +52,7 @@ fn main() {
         .add_system(spawn_totem)
         .add_system(spawn_ui)
         .add_system(spawn_powerup)
+        .add_system(player_invulnerable_blink)
         .add_system(move_all_players)
         .add_system(player_shoot)
         .add_system(move_all_bullets)
@@ -324,6 +327,56 @@ fn animate_sprite(
             let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
             sprite.index = (sprite.index + 1) % texture_atlas.textures.len();
             timer.counter -= 1;
+        }
+    }
+}
+
+fn player_invulnerable_blink(
+    mut commands: Commands,
+    mut players: Query<(&mut Sprite, &Player)>,
+    mut event_reader: EventReader<PlayerHitEvent>,
+    mut timer_query: Query<(Entity, &mut InvulnerableBlinkTimer)>,
+    time: Res<Time>,
+) {
+    for (entity, mut hit_timer) in &mut timer_query {
+        hit_timer.timer.tick(time.delta());
+        for (mut sprite, player) in &mut players {
+            if hit_timer.timer.finished() && hit_timer.associated_player == player.name {
+                if !player.invulnerable {
+                    sprite.color.set_a(1.0);
+                    commands.entity(entity).despawn();
+                    break;
+                }
+                if hit_timer.color {
+                    sprite.color.set_a(1.0);
+                    commands.spawn((InvulnerableBlinkTimer {
+                        timer: Timer::new(Duration::from_millis(200), TimerMode::Once),
+                        color: false,
+                        associated_player: player.name.clone(),
+                    },));
+                } else {
+                    sprite.color.set_a(0.5);
+                    commands.spawn((InvulnerableBlinkTimer {
+                        timer: Timer::new(Duration::from_millis(200), TimerMode::Once),
+                        color: true,
+                        associated_player: player.name.clone(),
+                    },));
+                }
+                commands.entity(entity).despawn();
+            }
+        }
+    }
+    for _ in event_reader.iter() {
+        for (mut sprite, player) in &mut players {
+            if !player.invulnerable {
+                continue;
+            }
+            sprite.color.set_a(0.5);
+            commands.spawn((InvulnerableBlinkTimer {
+                timer: Timer::new(Duration::from_millis(200), TimerMode::Once),
+                color: true,
+                associated_player: player.name.clone(),
+            },));
         }
     }
 }
