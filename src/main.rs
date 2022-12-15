@@ -433,7 +433,7 @@ fn spawn_totem(
 ) {
     for _ in event_reader.iter() {
         for (entity, transform, player) in players.iter() {
-            if player.lifes > 1 {
+            if player.lifes > 0 {
                 continue;
             }
             commands.entity(entity).despawn();
