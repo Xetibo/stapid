@@ -294,17 +294,19 @@ fn animate_sprite(
 }
 
 fn move_all_players(
-    mut players: Query<(&mut Player, &mut Transform)>,
+    mut players: Query<(&mut Player, &mut Transform, &mut Handle<Image>)>,
     timer: Res<Time>,
     keys: Res<Input<KeyCode>>,
+    asset_server: Res<AssetServer>,
 ) {
-    for (mut player, mut transform) in &mut players {
+    for (mut player, mut transform, mut player_sprite) in &mut players {
         if player.stunned == false {
             if keys.pressed(player.bindings.up)
                 && keys.pressed(player.bindings.right)
                 && !player.direction_block.up
                 && !player.direction_block.right
             {
+                *player_sprite = asset_server.load("../assets/player_right_up.png");
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -318,6 +320,7 @@ fn move_all_players(
                 && !player.direction_block.up
                 && !player.direction_block.left
             {
+                *player_sprite = asset_server.load("../assets/player_left_up.png");
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -331,6 +334,7 @@ fn move_all_players(
                 && !player.direction_block.down
                 && !player.direction_block.right
             {
+                *player_sprite = asset_server.load("../assets/player_right_down.png");
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -344,6 +348,7 @@ fn move_all_players(
                 && !player.direction_block.down
                 && !player.direction_block.left
             {
+                *player_sprite = asset_server.load("../assets/player_left_down.png");
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -353,24 +358,28 @@ fn move_all_players(
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::Left;
             } else if keys.pressed(player.bindings.up) && !player.direction_block.up {
+                *player_sprite = asset_server.load("../assets/player_up.png");
                 let new_position =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Up;
                 player.direction.direction_x = Direction::None;
             } else if keys.pressed(player.bindings.down) && !player.direction_block.down {
+                *player_sprite = asset_server.load("../assets/player_down.png");
                 let new_position =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::None;
             } else if keys.pressed(player.bindings.right) && !player.direction_block.right {
+                *player_sprite = asset_server.load("../assets/player_right.png");
                 let new_position =
                     transform.translation.x + 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_x = Direction::Right;
                 player.direction.direction_y = Direction::None;
             } else if keys.pressed(player.bindings.left) && !player.direction_block.left {
+                *player_sprite = asset_server.load("../assets/player_left.png");
                 let new_position =
                     transform.translation.x - 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);

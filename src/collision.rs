@@ -27,7 +27,7 @@ pub fn collision_explosion(
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
-                *player_sprite = asset_server.load("../assets/player.png");
+                *player_sprite = asset_server.load(player.get_direction_sprite());
                 event_writer.send_default();
                 if player.lifes > 2 {
                     player.lifes -= 2;
@@ -156,7 +156,8 @@ pub fn collision_bullet(
                                 if player.lifes > 1 {
                                     player.decrement_life();
                                     player.stunned = false;
-                                    *player_sprite = asset_server.load("../assets/player.png");
+                                    *player_sprite =
+                                        asset_server.load(player.get_direction_sprite());
                                     player.invulnerable = true;
                                     commands.spawn((HitCooldownTimer {
                                         timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
@@ -236,8 +237,8 @@ pub fn collision_bullet(
                             },
                         };
                         if maybe_player.is_some() {
-                            *player_sprite = asset_server.load("../assets/player.png");
                             let player = &mut **maybe_player.as_mut().unwrap();
+                            *player_sprite = asset_server.load(player.get_direction_sprite());
                             if player.invulnerable == false {
                                 if player.lifes > 1 {
                                     commands.entity(bullet_entity).despawn();

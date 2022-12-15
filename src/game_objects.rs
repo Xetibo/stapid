@@ -120,6 +120,26 @@ impl Player {
         };
         (bullet_x, bullet_y)
     }
+
+    pub fn get_direction_sprite(&self) -> &str {
+        match &self.direction.direction_x {
+            Direction::Right => match &self.direction.direction_y {
+                Direction::Up => "../assets/player_right_up.png",
+                Direction::Down => "../assets/player_right_down.png",
+                _ => "../assets/player_right.png",
+            },
+            Direction::Left => match &self.direction.direction_y {
+                Direction::Up => "../assets/player_left_up.png",
+                Direction::Down => "../assets/player_left_down.png",
+                _ => "../assets/player_left.png",
+            },
+            _ => match &self.direction.direction_y {
+                Direction::Up => "../assets/player_up.png",
+                Direction::Down => "../assets/player_up.png",
+                _ => "",
+            },
+        }
+    }
 }
 
 impl Bullet {
