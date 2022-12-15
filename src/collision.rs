@@ -10,11 +10,12 @@ use rand::prelude::*;
 
 pub fn collision_explosion(
     mut commands: Commands,
-    mut player_query: Query<(Entity, &Transform, &mut Player)>,
+    mut player_query: Query<(Entity, &Transform, &mut Handle<Image>, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
     mut event_writer: EventWriter<UpdateUIEvent>,
+    asset_server: ResMut<AssetServer>
 ) {
-    for (player_entity, player_transform, mut player) in &mut player_query {
+    for (player_entity, player_transform, mut player_sprite, mut player) in &mut player_query {
         for (_collider_entity, transform, explosion) in &mut collider_query {
             let collision = collide(
                 transform.translation,
@@ -26,6 +27,7 @@ pub fn collision_explosion(
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
+                *player_sprite = asset_server.load("../assets/player.png");
                 event_writer.send_default();
                 if player.lifes > 2 {
                     player.lifes -= 2;
@@ -180,7 +182,6 @@ pub fn collision_bullet(
                         }
                     }
                     BulletType::ExplosiveBullet => {
-                        // *player_sprite = asset_server.load("../assets/player.png");
                         commands.entity(bullet_entity).despawn();
                         let texture_handle = asset_server.load("../assets/explosion_anim.png");
                         let texture_atlas = TextureAtlas::from_grid(
@@ -213,7 +214,6 @@ pub fn collision_bullet(
                         ));
                     }
                     BulletType::BouncyBullet => {
-                        // *player_sprite = asset_server.load("../assets/player.png");
                         let direction_collision = collision.unwrap();
                         bullet.direction = match direction_collision {
                             Collision::Left | Collision::Right => DirectionHelper {
@@ -226,6 +226,7 @@ pub fn collision_bullet(
                             },
                         };
                         if maybe_player.is_some() {
+                            *player_sprite = asset_server.load("../assets/player.png");
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
                                 if player.lifes > 1 {
