@@ -1,4 +1,4 @@
-use crate::game_objects::{Bullet, Explosion, Player, PowerUp, Wall};
+use crate::game_objects::{Bullet, Explosion, Player, PowerUp};
 use crate::game_utils::{
     AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerHitEvent,
     TimerType, UpdateUIEvent,
@@ -76,7 +76,15 @@ pub fn collision_powerup(
 }
 
 pub fn collision_player(
-    collider_query: Query<&Transform, (With<Collider>, With<Wall>)>,
+    collider_query: Query<
+        &Transform,
+        (
+            With<Collider>,
+            Without<Bullet>,
+            Without<PowerUp>,
+            Without<Explosion>,
+        ),
+    >,
     mut player_query: Query<(&Transform, &mut Player)>,
 ) {
     for (player_transform, mut player) in &mut player_query {

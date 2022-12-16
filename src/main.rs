@@ -1,4 +1,4 @@
-use bevy::{prelude::*, utils::Duration};
+use bevy::{prelude::*, sprite::collide_aabb::collide, utils::Duration};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
 use game_utils::PlayerHitEvent;
 
@@ -596,12 +596,38 @@ fn spawn_powerup(
     mut commands: Commands,
     asset_server: ResMut<AssetServer>,
     power_up_query: Query<Entity, With<PowerUp>>,
+    collision_query: Query<&Transform, With<Collider>>,
 ) {
     let mut count = 0;
     for _entity in &power_up_query {
         count += 1;
     }
     if count < 2 {
+        let mut powerup_transform = Transform { ..default() };
+        loop {
+            let mut collided = false;
+            powerup_transform.translation = PowerUp::generate_random_position();
+            powerup_transform.scale = Vec3 {
+                x: 40.0,
+                y: 40.0,
+                z: 0.0,
+            };
+            for transform in &collision_query {
+                let collision = collide(
+                    transform.translation,
+                    transform.scale.truncate(),
+                    powerup_transform.translation,
+                    powerup_transform.scale.truncate(),
+                );
+                if collision.is_some() {
+                    collided = true;
+                    break;
+                }
+            }
+            if !collided {
+                break;
+            }
+        }
         commands.spawn((
             PowerUp {
                 pickup_type: BulletType::IceBullet,
@@ -612,15 +638,7 @@ fn spawn_powerup(
                     ..default()
                 },
                 texture: asset_server.load("../assets/coin.png"),
-                transform: Transform {
-                    translation: PowerUp::generate_random_position(),
-                    scale: Vec3 {
-                        x: 40.0,
-                        y: 40.0,
-                        z: 0.0,
-                    },
-                    ..default()
-                },
+                transform: powerup_transform,
                 ..default()
             },
             Collider,
@@ -711,42 +729,43 @@ fn update_ui(
     mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
 ) {
     for event in event_reader_hit.iter() {
-        let mut count = 1;
+        let mut count = 0;
+        let mut text_nodes = text_query.iter_mut();
         for player in &player_query {
-            for mut text_node in &mut text_query {
-                if count != event.player_number {
-                    count += 1;
-                    continue;
-                }
-                if player.lifes < 1 {
-                    *text_node = Text::from_section(
-                        "",
-                        TextStyle {
-                            font: asset_server.load("fonts/font.ttf"),
-                            font_size: 30.0,
-                            color: Color::WHITE,
-                        },
-                    );
-                    player_dead_event_writer.send_default();
-                    return;
-                }
-                let mut powerup = BulletType::NormalBullet;
-                if player.power_up_type.is_some() {
-                    powerup = player.power_up_type.clone().unwrap();
-                }
+            if player.player_number as usize != event.player_number {
+                count += 1;
+                continue;
+            }
+            let mut maybe_node = text_nodes.nth(count);
+            let text_node = &mut **maybe_node.as_mut().unwrap();
+            if player.lifes < 1 {
                 *text_node = Text::from_section(
-                    format!(
-                        "Player {}\nLifes: {}\nSpecial:\n{}\n\n",
-                        player.player_number, player.lifes, powerup
-                    ),
+                    "",
                     TextStyle {
                         font: asset_server.load("fonts/font.ttf"),
                         font_size: 30.0,
                         color: Color::WHITE,
                     },
                 );
+                player_dead_event_writer.send_default();
                 return;
             }
+            let mut powerup = BulletType::NormalBullet;
+            if player.power_up_type.is_some() {
+                powerup = player.power_up_type.clone().unwrap();
+            }
+            *text_node = Text::from_section(
+                format!(
+                    "Player {}\nLifes: {}\nSpecial:\n{}\n\n",
+                    player.player_number, player.lifes, powerup
+                ),
+                TextStyle {
+                    font: asset_server.load("fonts/font.ttf"),
+                    font_size: 30.0,
+                    color: Color::WHITE,
+                },
+            );
+            return;
         }
     }
 }

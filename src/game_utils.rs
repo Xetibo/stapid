@@ -134,7 +134,7 @@ impl fmt::Display for BulletType {
         match self {
             BulletType::IceBullet => write!(f, "Ice"),
             BulletType::NormalBullet => write!(f, "None"),
-            BulletType::ExplosiveBullet => write!(f, "Explosive"),
+            BulletType::ExplosiveBullet => write!(f, "Grenade"),
             BulletType::BouncyBullet => write!(f, "Bouncy"),
         }
     }
