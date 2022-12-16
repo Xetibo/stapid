@@ -1,7 +1,7 @@
 use crate::game_objects::{Bullet, Explosion, Player, PowerUp, Wall};
 use crate::game_utils::{
-    AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerDeadEvent,
-    PlayerHitEvent, TimerType, UpdateUIEvent,
+    AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerHitEvent,
+    TimerType, UpdateUIEvent,
 };
 use bevy::{
     prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision, utils::Duration,
@@ -12,7 +12,6 @@ pub fn collision_explosion(
     mut commands: Commands,
     mut player_query: Query<(&Transform, &mut Handle<Image>, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &Explosion), With<Collider>>,
-    mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
     mut event_writer: EventWriter<UpdateUIEvent>,
     mut event_writer_player_hit: EventWriter<PlayerHitEvent>,
     asset_server: ResMut<AssetServer>,
@@ -30,19 +29,18 @@ pub fn collision_explosion(
             );
             if collision.is_some() {
                 *player_sprite = asset_server.load(player.get_direction_sprite());
-                event_writer.send_default();
-                if player.lifes > 2 {
-                    event_writer_player_hit.send_default();
-                    player.lifes -= 2;
+                player.lifes -= 2;
+                event_writer.send(UpdateUIEvent {
+                    player_number: player.player_number as usize,
+                });
+                if player.lifes > 0 {
                     player.invulnerable = true;
                     commands.spawn((HitCooldownTimer {
                         timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
                         associated_player: player.name.clone(),
                         timer_type: TimerType::Invulnerable,
                     },));
-                } else {
-                    player.lifes -= 2;
-                    player_dead_event_writer.send_default();
+                    event_writer_player_hit.send_default();
                 }
             }
         }
@@ -64,12 +62,14 @@ pub fn collision_powerup(
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
-                event_writer.send_default();
                 let mut rng = rand::thread_rng();
                 let bullet_random = rng.gen_range(0..=2);
                 player.powerup = true;
                 player.power_up_type = BulletType::convert_int(bullet_random);
                 commands.entity(collider_entity).despawn();
+                event_writer.send(UpdateUIEvent {
+                    player_number: player.player_number as usize,
+                });
             }
         }
     }
@@ -137,7 +137,6 @@ pub fn collision_bullet(
         With<Collider>,
     >,
     mut event_writer: EventWriter<UpdateUIEvent>,
-    mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
     mut event_writer_player_hit: EventWriter<PlayerHitEvent>,
     asset_server: ResMut<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
@@ -158,9 +157,12 @@ pub fn collision_bullet(
                         if maybe_player.is_some() {
                             let player = &mut **maybe_player.as_mut().unwrap();
                             if player.invulnerable == false {
-                                if player.lifes > 1 {
+                                player.decrement_life();
+                                event_writer.send(UpdateUIEvent {
+                                    player_number: player.player_number as usize,
+                                });
+                                if player.lifes > 0 {
                                     event_writer_player_hit.send_default();
-                                    player.decrement_life();
                                     player.stunned = false;
                                     *player_sprite =
                                         asset_server.load(player.get_direction_sprite());
@@ -170,11 +172,7 @@ pub fn collision_bullet(
                                         associated_player: player.name.clone(),
                                         timer_type: TimerType::Invulnerable,
                                     },));
-                                } else {
-                                    player.decrement_life();
-                                    player_dead_event_writer.send_default();
                                 }
-                                event_writer.send_default();
                             }
                         }
                     }
@@ -243,27 +241,33 @@ pub fn collision_bullet(
                                 direction_y: bullet.direction.direction_y.opposite(),
                             },
                         };
-                        if maybe_player.is_some() {
-                            let player = &mut **maybe_player.as_mut().unwrap();
-                            *player_sprite = asset_server.load(player.get_direction_sprite());
-                            if player.invulnerable == false {
-                                if player.lifes > 1 {
-                                    event_writer_player_hit.send_default();
-                                    commands.entity(bullet_entity).despawn();
-                                    player.decrement_life();
-                                    player.stunned = false;
-                                    player.invulnerable = true;
-                                    commands.spawn((HitCooldownTimer {
-                                        timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
-                                        associated_player: player.name.clone(),
-                                        timer_type: TimerType::Invulnerable,
-                                    },));
-                                } else {
-                                    player.decrement_life();
-                                    player_dead_event_writer.send_default();
-                                }
-                                event_writer.send_default();
-                            }
+                        bullet.bounces_left -= 1;
+                        if bullet.bounces_left < 1 {
+                            commands.entity(bullet_entity).despawn();
+                            continue;
+                        }
+                        if !maybe_player.is_some() {
+                            continue;
+                        }
+                        let player = &mut **maybe_player.as_mut().unwrap();
+                        *player_sprite = asset_server.load(player.get_direction_sprite());
+                        if player.invulnerable {
+                            continue;
+                        }
+                        player.decrement_life();
+                        event_writer.send(UpdateUIEvent {
+                            player_number: player.player_number as usize,
+                        });
+                        if player.lifes > 0 {
+                            event_writer_player_hit.send_default();
+                            commands.entity(bullet_entity).despawn();
+                            player.stunned = false;
+                            player.invulnerable = true;
+                            commands.spawn((HitCooldownTimer {
+                                timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                associated_player: player.name.clone(),
+                                timer_type: TimerType::Invulnerable,
+                            },));
                         }
                     }
                 }

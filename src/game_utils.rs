@@ -15,7 +15,9 @@ pub struct PlayerShootEvent {}
 pub struct PlayerPowerUpEvent {}
 
 #[derive(Default)]
-pub struct UpdateUIEvent {}
+pub struct UpdateUIEvent {
+    pub player_number: usize,
+}
 
 #[derive(Default)]
 pub struct PlayerDeadEvent {}
@@ -132,7 +134,7 @@ impl fmt::Display for BulletType {
         match self {
             BulletType::IceBullet => write!(f, "Ice"),
             BulletType::NormalBullet => write!(f, "None"),
-            BulletType::ExplosiveBullet => write!(f, "Eplosive"),
+            BulletType::ExplosiveBullet => write!(f, "Explosive"),
             BulletType::BouncyBullet => write!(f, "Bouncy"),
         }
     }

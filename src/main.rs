@@ -483,7 +483,6 @@ fn spawn_totem(
     players: Query<(Entity, &Transform, &Player)>,
     asset_server: ResMut<AssetServer>,
     mut event_reader: EventReader<PlayerDeadEvent>,
-    mut event_writer: EventWriter<UpdateUIEvent>,
 ) {
     for _ in event_reader.iter() {
         for (entity, transform, player) in players.iter() {
@@ -507,7 +506,6 @@ fn spawn_totem(
                     ..default()
                 },
             ));
-            event_writer.send_default();
         }
     }
 }
@@ -587,7 +585,9 @@ fn player_shoot(
             ));
             player.powerup = false;
             player.power_up_type = None;
-            event_writer.send_default();
+            event_writer.send(UpdateUIEvent {
+                player_number: player.player_number as usize,
+            });
         }
     }
 }
@@ -708,38 +708,45 @@ fn update_ui(
     player_query: Query<&Player>,
     asset_server: Res<AssetServer>,
     mut event_reader_hit: EventReader<UpdateUIEvent>,
+    mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
 ) {
-    for _ in event_reader_hit.iter() {
-        let mut player_iter = player_query.iter();
-        for mut text_node in &mut text_query {
-            let maybe_player = player_iter.next();
-            if !maybe_player.is_some() {
+    for event in event_reader_hit.iter() {
+        let mut count = 1;
+        for player in &player_query {
+            for mut text_node in &mut text_query {
+                if count != event.player_number {
+                    count += 1;
+                    continue;
+                }
+                if player.lifes < 1 {
+                    *text_node = Text::from_section(
+                        "",
+                        TextStyle {
+                            font: asset_server.load("fonts/font.ttf"),
+                            font_size: 30.0,
+                            color: Color::WHITE,
+                        },
+                    );
+                    player_dead_event_writer.send_default();
+                    return;
+                }
+                let mut powerup = BulletType::NormalBullet;
+                if player.power_up_type.is_some() {
+                    powerup = player.power_up_type.clone().unwrap();
+                }
                 *text_node = Text::from_section(
-                    "",
+                    format!(
+                        "Player {}\nLifes: {}\nSpecial:\n{}\n\n",
+                        player.player_number, player.lifes, powerup
+                    ),
                     TextStyle {
                         font: asset_server.load("fonts/font.ttf"),
                         font_size: 30.0,
                         color: Color::WHITE,
                     },
                 );
-                continue;
+                return;
             }
-            let player = maybe_player.unwrap();
-            let mut powerup = BulletType::NormalBullet;
-            if player.power_up_type.is_some() {
-                powerup = player.power_up_type.clone().unwrap();
-            }
-            *text_node = Text::from_section(
-                format!(
-                    "Player {}\nLifes: {}\nSpecial:\n{}\n\n",
-                    player.player_number, player.lifes, powerup
-                ),
-                TextStyle {
-                    font: asset_server.load("fonts/font.ttf"),
-                    font_size: 30.0,
-                    color: Color::WHITE,
-                },
-            );
         }
     }
 }

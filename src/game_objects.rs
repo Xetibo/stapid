@@ -30,6 +30,7 @@ pub struct Bullet {
     pub area_of_effect: f32,
     pub stuns: bool,
     pub bounces: bool,
+    pub bounces_left: i32,
     pub direction: DirectionHelper,
     pub color: Color,
 }
@@ -166,6 +167,7 @@ impl Bullet {
             area_of_effect: 1.0,
             stuns: false,
             bounces: false,
+            bounces_left: 0,
             direction: direction_entered,
             color: Color::rgb(1.0, 0.0, 0.0),
         }
@@ -178,6 +180,7 @@ impl Bullet {
             area_of_effect: 1.0,
             stuns: true,
             bounces: false,
+            bounces_left: 0,
             direction: direction_entered,
             color: Color::rgb(0.0, 0.0, 1.0),
         }
@@ -190,6 +193,7 @@ impl Bullet {
             area_of_effect: 5.0,
             stuns: false,
             bounces: false,
+            bounces_left: 0,
             direction: direction_entered,
             color: Color::rgb(1.0, 1.0, 0.0),
         }
@@ -202,6 +206,7 @@ impl Bullet {
             area_of_effect: 1.0,
             stuns: false,
             bounces: true,
+            bounces_left: 4,
             direction: direction_entered,
             color: Color::rgb(0.0, 1.0, 0.0),
         }
