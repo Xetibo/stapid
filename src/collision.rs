@@ -1,7 +1,7 @@
 use crate::game_objects::{Bullet, Explosion, Player, PowerUp};
 use crate::game_utils::{
     AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerHitEvent,
-    TimerType, UpdateUIEvent,
+    TimerType, UpdateUIEvent, PlayerPowerUpEvent,
 };
 use bevy::{
     prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision, utils::Duration,
@@ -52,6 +52,7 @@ pub fn collision_powerup(
     mut player_query: Query<(&Transform, &mut Player)>,
     mut collider_query: Query<(Entity, &Transform, &PowerUp), With<Collider>>,
     mut event_writer: EventWriter<UpdateUIEvent>,
+    mut event_writer_powerup: EventWriter<PlayerPowerUpEvent>,
 ) {
     for (player_transform, mut player) in &mut player_query {
         for (collider_entity, transform, _maybe_powerup) in &mut collider_query {
@@ -70,6 +71,7 @@ pub fn collision_powerup(
                 event_writer.send(UpdateUIEvent {
                     player_number: player.player_number as usize,
                 });
+                event_writer_powerup.send_default();
             }
         }
     }

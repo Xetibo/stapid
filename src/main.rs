@@ -1,11 +1,11 @@
 use bevy::{prelude::*, sprite::collide_aabb::collide, utils::Duration};
 use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
-use game_utils::PlayerHitEvent;
 
 pub mod game_utils;
 use crate::game_utils::{
     AnimationTimer, BulletType, Collider, Direction, DirectionHelper, HitCooldownTimer,
-    InvulnerableBlinkTimer, Name, PlayerDeadEvent, ResetGameEvent, TimerType, UpdateUIEvent,
+    InvulnerableBlinkTimer, Name, PlayerDeadEvent, PlayerHitEvent, PlayerPowerUpEvent,
+    ResetGameEvent, TimerType, UpdateUIEvent,
 };
 
 pub mod game_objects;
@@ -43,6 +43,7 @@ fn main() {
         .add_event::<UpdateUIEvent>()
         .add_event::<PlayerDeadEvent>()
         .add_event::<PlayerHitEvent>()
+        .add_event::<PlayerPowerUpEvent>()
         .add_startup_system(spawn_walls)
         .add_startup_system(spawn_level_1)
         .add_startup_system(spawn_camera)
@@ -597,52 +598,56 @@ fn spawn_powerup(
     asset_server: ResMut<AssetServer>,
     power_up_query: Query<Entity, With<PowerUp>>,
     collision_query: Query<&Transform, With<Collider>>,
+    mut event_reader: EventReader<PlayerPowerUpEvent>,
 ) {
-    let mut count = 0;
-    for _entity in &power_up_query {
-        count += 1;
-    }
-    if count < 2 {
-        let mut powerup_transform = Transform { ..default() };
-        loop {
-            let mut collided = false;
-            powerup_transform.translation = PowerUp::generate_random_position();
-            powerup_transform.scale = Vec3 {
-                x: 40.0,
-                y: 40.0,
-                z: 0.0,
-            };
-            for transform in &collision_query {
-                let collision = collide(
-                    transform.translation,
-                    transform.scale.truncate(),
-                    powerup_transform.translation,
-                    powerup_transform.scale.truncate(),
-                );
-                if collision.is_some() {
-                    collided = true;
+    for _ in event_reader.iter() {
+        let mut count = 0;
+        for _entity in &power_up_query {
+            count += 1;
+        }
+        while count < 2 {
+            let mut powerup_transform = Transform { ..default() };
+            loop {
+                let mut collided = false;
+                powerup_transform.translation = PowerUp::generate_random_position();
+                powerup_transform.scale = Vec3 {
+                    x: 40.0,
+                    y: 40.0,
+                    z: 0.0,
+                };
+                for transform in &collision_query {
+                    let collision = collide(
+                        transform.translation,
+                        transform.scale.truncate(),
+                        powerup_transform.translation,
+                        powerup_transform.scale.truncate(),
+                    );
+                    if collision.is_some() {
+                        collided = true;
+                        break;
+                    }
+                }
+                if !collided {
                     break;
                 }
             }
-            if !collided {
-                break;
-            }
-        }
-        commands.spawn((
-            PowerUp {
-                pickup_type: BulletType::IceBullet,
-            },
-            SpriteBundle {
-                sprite: Sprite {
-                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+            commands.spawn((
+                PowerUp {
+                    pickup_type: BulletType::IceBullet,
+                },
+                SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+                        ..default()
+                    },
+                    texture: asset_server.load("../assets/coin.png"),
+                    transform: powerup_transform,
                     ..default()
                 },
-                texture: asset_server.load("../assets/coin.png"),
-                transform: powerup_transform,
-                ..default()
-            },
-            Collider,
-        ));
+                Collider,
+            ));
+            count += 1;
+        }
     }
 }
 
