@@ -1,6 +1,6 @@
 use crate::constants::WALL_THICKNESS;
 use crate::game_objects::{Wall, WallBundle};
-use crate::game_utils::{Direction, ResetGameEvent, PlayerPowerUpEvent};
+use crate::game_utils::{Direction, PlayerPowerUpEvent, ResetGameEvent};
 use crate::Collider;
 use bevy::prelude::*;
 
@@ -22,7 +22,11 @@ const WALL_V_MIDDLE_LEFT_X: f32 = -300.0;
 const WALL_V_MIDDLE_Y: f32 = 0.0;
 const WALL_V_MIDDLE_LENGTH: f32 = 350.0;
 
-pub fn spawn_level_1(mut commands: Commands, mut event_writer: EventWriter<ResetGameEvent>, mut event_writer_powerup: EventWriter<PlayerPowerUpEvent>) {
+pub fn spawn_level_1(
+    mut commands: Commands,
+    mut event_writer: EventWriter<ResetGameEvent>,
+    mut event_writer_powerup: EventWriter<PlayerPowerUpEvent>,
+) {
     event_writer.send_default();
     event_writer_powerup.send_default();
     let walls = generate_walls();

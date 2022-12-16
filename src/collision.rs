@@ -1,7 +1,7 @@
 use crate::game_objects::{Bullet, Explosion, Player, PowerUp};
 use crate::game_utils::{
     AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerHitEvent,
-    TimerType, UpdateUIEvent, PlayerPowerUpEvent,
+    PlayerPowerUpEvent, TimerType, UpdateUIEvent,
 };
 use bevy::{
     prelude::*, sprite::collide_aabb::collide, sprite::collide_aabb::Collision, utils::Duration,
