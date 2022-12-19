@@ -114,7 +114,7 @@ fn spawn_player(
                     translation: Vec3 {
                         x: -700.0,
                         y: 350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -154,7 +154,7 @@ fn spawn_player(
                     translation: Vec3 {
                         x: 700.0,
                         y: 350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -194,7 +194,7 @@ fn spawn_player(
                     translation: Vec3 {
                         x: -700.0,
                         y: -350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -234,7 +234,7 @@ fn spawn_player(
                     translation: Vec3 {
                         x: 700.0,
                         y: -350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -500,8 +500,12 @@ fn spawn_totem(
                     },
                     texture: asset_server.load("../assets/dead.png"),
                     transform: Transform {
-                        translation: transform.translation,
-                        scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 0.5),
+                        translation: Vec3 {
+                            x: transform.translation.x,
+                            y: transform.translation.y,
+                            z: 1.0,
+                        },
+                        scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 0.0),
                         ..default()
                     },
                     ..default()
@@ -535,12 +539,12 @@ fn player_shoot(
                             + Vec3 {
                                 x: bullet_x,
                                 y: bullet_y,
-                                z: 0.0,
+                                z: 2.0,
                             },
                         scale: Vec3 {
                             x: 30.0,
                             y: 30.0,
-                            z: 1.0,
+                            z: 0.0,
                         },
                         ..default()
                     },
@@ -572,7 +576,7 @@ fn player_shoot(
                             + Vec3 {
                                 x: bullet_x,
                                 y: bullet_y,
-                                z: 0.0,
+                                z: 2.0,
                             },
                         scale: Vec3 {
                             x: 30.0,

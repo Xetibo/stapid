@@ -219,7 +219,7 @@ impl PowerUp {
         Vec3 {
             x: rng.gen_range((WALL_LEFT + 15.0)..=(WALL_RIGHT - 15.0)),
             y: rng.gen_range((WALL_TOP + 15.0)..=(WALL_BOTTOM - 15.0)),
-            z: 0.0,
+            z: 2.0,
         }
     }
 }
@@ -234,39 +234,39 @@ impl WallBundle {
                         Direction::Up => Vec3 {
                             x: 0.0,
                             y: WALL_TOP,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::Down => Vec3 {
                             x: 0.0,
                             y: WALL_BOTTOM,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::Right => Vec3 {
                             x: WALL_RIGHT,
                             y: 0.0,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::Left => Vec3 {
                             x: WALL_LEFT,
                             y: 0.0,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::None => Vec3 {
                             x: 0.0,
                             y: 0.0,
-                            z: 0.0,
+                            z: 2.0,
                         },
                     },
                     scale: match entered_direction {
                         Direction::Up | Direction::Down => Vec3 {
                             x: 1610.0,
                             y: WALL_THICKNESS,
-                            z: (1.0),
+                            z: (0.0),
                         },
                         Direction::Right | Direction::Left => Vec3 {
                             x: WALL_THICKNESS,
                             y: 1010.0,
-                            z: (1.0),
+                            z: (0.0),
                         },
                         Direction::None => Vec3 {
                             x: 0.0,
@@ -277,7 +277,6 @@ impl WallBundle {
                     ..default()
                 },
                 sprite: Sprite {
-                    color: Color::rgb(1.0, 0.0, 0.0),
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
@@ -299,12 +298,12 @@ impl WallBundle {
                         translation: Vec3 {
                             x: rng.gen_range(-500..=500) as f32,
                             y: rng.gen_range(-400..=400) as f32,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         scale: Vec3 {
                             x: 500.0,
                             y: WALL_THICKNESS,
-                            z: (1.0),
+                            z: (0.0),
                         },
                         ..default()
                     },
@@ -323,12 +322,12 @@ impl WallBundle {
                         translation: Vec3 {
                             x: rng.gen_range(-500..=500) as f32,
                             y: rng.gen_range(-250..=250) as f32,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         scale: Vec3 {
                             x: WALL_THICKNESS,
                             y: 500.0,
-                            z: (1.0),
+                            z: (0.0),
                         },
                         ..default()
                     },

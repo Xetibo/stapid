@@ -34,6 +34,27 @@ pub fn spawn_level_1(
     for wall in walls {
         commands.spawn((wall, Wall {}));
     }
+    commands.spawn(SpriteBundle {
+        transform: Transform {
+            translation: Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            scale: Vec3 {
+                x: 1920.0,
+                y: 1080.0,
+                z: 0.0,
+            },
+            ..default()
+        },
+        sprite: Sprite {
+            custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+            ..default()
+        },
+        texture: asset_server.load("../assets/floor_bricks.png"),
+        ..default()
+    });
 }
 
 fn generate_walls(asset_server: &Res<AssetServer>) -> Vec<WallBundle> {
@@ -114,21 +135,20 @@ fn create_spawn_wall(
                 translation: Vec3 {
                     x: wall_x,
                     y: wall_y,
-                    z: (0.0),
+                    z: (2.0),
                 },
                 scale: Vec3 {
                     x: wall_scale_x,
                     y: wall_scale_y,
-                    z: (1.0),
+                    z: (0.0),
                 },
                 ..default()
             },
             sprite: Sprite {
-                color: Color::rgb(1.0, 0.0, 0.0),
                 custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                 ..default()
             },
-            texture: asset_server.load("../assets/floor_bricks.png"),
+            texture: asset_server.load("../assets/bricks.png"),
             ..default()
         },
         collider: Collider,
