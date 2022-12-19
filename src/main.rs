@@ -29,6 +29,8 @@ fn main() {
                         title: String::from("stapid"),
                         resizable: true,
                         decorations: false,
+                        // monitor: MonitorSelection::Index(0),
+                        // mode: WindowMode::Fullscreen,
                         ..default()
                     },
                     ..default()
@@ -690,30 +692,54 @@ fn spawn_ui(
             ))
             .with_children(|parent| {
                 for n in 1..5 {
-                    parent.spawn((
-                        TextBundle::from_section(
-                            format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
-                            TextStyle {
-                                font: asset_server.load("fonts/font.ttf"),
-                                font_size: 30.0,
-                                color: Color::WHITE,
+                    parent
+                        .spawn(ImageBundle {
+                            style: Style {
+                                size: Size::new(Val::Px(150.0), Val::Px(140.0)),
+                                padding: UiRect {
+                                    left: Val::Px(20.0),
+                                    right: Val::Px(20.0),
+                                    top: Val::Px(10.0),
+                                    bottom: Val::Px(10.0),
+                                },
+                                ..default()
                             },
-                        )
-                        .with_style(Style {
-                            margin: UiRect::all(Val::Px(1.0)),
+                            image: asset_server.load("../assets/hud.png").into(),
                             ..default()
-                        }),
-                        UIText {},
-                    ));
+                        })
+                        .with_children(|subparent| {
+                            subparent.spawn((
+                                TextBundle::from_section(
+                                    format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
+                                    TextStyle {
+                                        font: asset_server.load("fonts/font.ttf"),
+                                        font_size: 30.0,
+                                        color: Color::WHITE,
+                                    },
+                                )
+                                .with_style(Style {
+                                    margin: UiRect::all(Val::Px(1.0)),
+                                    ..default()
+                                }),
+                                UIText {},
+                            ));
+                        });
                 }
                 parent
                     .spawn(ButtonBundle {
                         style: Style {
                             size: Size::new(Val::Px(100.0), Val::Px(60.0)),
                             margin: UiRect::all(Val::Px(8.0)),
+                            padding: UiRect {
+                                left: Val::Px(17.0),
+                                right: Val::Px(17.0),
+                                top: Val::Px(15.0),
+                                bottom: Val::Px(15.0),
+                            },
+                            justify_content: JustifyContent::Center,
                             ..default()
                         },
-                        background_color: Color::rgb(0.3, 0.3, 0.3).into(),
+                        image: asset_server.load("../assets/hud.png").into(),
                         ..default()
                     })
                     .with_children(|subparent| {
