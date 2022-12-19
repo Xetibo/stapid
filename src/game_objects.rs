@@ -280,7 +280,10 @@ impl WallBundle {
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/bricks.png"),
+                texture: match entered_direction {
+                    Direction::Up | Direction::Down => asset_server.load("../assets/bricks.png"),
+                    _ => asset_server.load("../assets/bricks.png"),
+                },
                 ..default()
             },
             collider: Collider,

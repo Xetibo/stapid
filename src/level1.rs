@@ -63,61 +63,73 @@ fn generate_walls(asset_server: &Res<AssetServer>) -> Vec<WallBundle> {
         Direction::Up,
         Direction::Right,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Up,
         Direction::Left,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Up,
         Direction::None,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::Right,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::Left,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::None,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Right,
         Direction::Up,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Right,
         Direction::Down,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Right,
         Direction::None,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Left,
         Direction::Up,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Left,
         Direction::Down,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Left,
         Direction::None,
         asset_server,
+        "../assets/bricks.png",
     ));
     walls
 }
@@ -126,6 +138,7 @@ fn create_spawn_wall(
     direction_wall: Direction,
     direction: Direction,
     asset_server: &Res<AssetServer>,
+    asset: &str,
 ) -> WallBundle {
     let (wall_x, wall_y, wall_scale_x, wall_scale_y) = get_vals(direction_wall, direction);
     WallBundle {
@@ -148,7 +161,7 @@ fn create_spawn_wall(
                 custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                 ..default()
             },
-            texture: asset_server.load("../assets/bricks.png"),
+            texture: asset_server.load(asset),
             ..default()
         },
         collider: Collider,
