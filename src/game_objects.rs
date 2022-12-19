@@ -225,7 +225,7 @@ impl PowerUp {
 }
 
 impl WallBundle {
-    pub fn new(entered_direction: Direction) -> WallBundle {
+    pub fn new(entered_direction: Direction, asset_server: &Res<AssetServer>) -> WallBundle {
         WallBundle {
             direction: entered_direction.clone(),
             sprite_bundle: SpriteBundle {
@@ -278,8 +278,10 @@ impl WallBundle {
                 },
                 sprite: Sprite {
                     color: Color::rgb(1.0, 0.0, 0.0),
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
+                texture: asset_server.load("../assets/bricks.png"),
                 ..default()
             },
             collider: Collider,

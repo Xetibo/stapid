@@ -651,11 +651,11 @@ fn spawn_powerup(
     }
 }
 
-fn spawn_walls(mut commands: Commands) {
-    commands.spawn(WallBundle::new(Direction::Up));
-    commands.spawn(WallBundle::new(Direction::Down));
-    commands.spawn(WallBundle::new(Direction::Right));
-    commands.spawn(WallBundle::new(Direction::Left));
+fn spawn_walls(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(WallBundle::new(Direction::Up, &asset_server));
+    commands.spawn(WallBundle::new(Direction::Down, &asset_server));
+    commands.spawn(WallBundle::new(Direction::Right, &asset_server));
+    commands.spawn(WallBundle::new(Direction::Left, &asset_server));
 }
 
 fn spawn_ui(
