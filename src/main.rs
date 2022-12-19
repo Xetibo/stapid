@@ -501,7 +501,7 @@ fn spawn_totem(
                     texture: asset_server.load("../assets/dead.png"),
                     transform: Transform {
                         translation: transform.translation,
-                        scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 1.0),
+                        scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 0.5),
                         ..default()
                     },
                     ..default()
