@@ -127,18 +127,18 @@ impl Player {
     pub fn get_direction_sprite(&self) -> &str {
         match &self.direction.direction_x {
             Direction::Right => match &self.direction.direction_y {
-                Direction::Up => "../assets/player_right_up.png",
-                Direction::Down => "../assets/player_right_down.png",
-                _ => "../assets/player_right.png",
+                Direction::Up => "../assets/images/player/player_right_up.png",
+                Direction::Down => "../assets/images/player/player_right_down.png",
+                _ => "../assets/images/player/player_right.png",
             },
             Direction::Left => match &self.direction.direction_y {
-                Direction::Up => "../assets/player_left_up.png",
-                Direction::Down => "../assets/player_left_down.png",
-                _ => "../assets/player_left.png",
+                Direction::Up => "../assets/images/player/player_left_up.png",
+                Direction::Down => "../assets/images/player/player_left_down.png",
+                _ => "../assets/images/player/player_left.png",
             },
             _ => match &self.direction.direction_y {
-                Direction::Up => "../assets/player_up.png",
-                Direction::Down => "../assets/player_down.png",
+                Direction::Up => "../assets/images/player/player_up.png",
+                Direction::Down => "../assets/images/player/player_down.png",
                 _ => "",
             },
         }
@@ -282,9 +282,9 @@ impl WallBundle {
                 },
                 texture: match entered_direction {
                     Direction::Up | Direction::Down => {
-                        asset_server.load("../assets/bricks_1616.png")
+                        asset_server.load("../assets/images/walls/bricks_1616.png")
                     }
-                    _ => asset_server.load("../assets/bricks_984.png"),
+                    _ => asset_server.load("../assets/images/walls/bricks_984.png"),
                 },
                 ..default()
             },

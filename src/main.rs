@@ -126,7 +126,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_right.png"),
+                texture: asset_server.load("../assets/images/player/player_right.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
@@ -166,7 +166,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_left.png"),
+                texture: asset_server.load("../assets/images/player/player_left.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
@@ -206,7 +206,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_right.png"),
+                texture: asset_server.load("../assets/images/player/player_right.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
@@ -246,7 +246,7 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_left.png"),
+                texture: asset_server.load("../assets/images/player/player_left.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
@@ -412,7 +412,7 @@ fn move_all_players(
                 && !player.direction_block.up
                 && !player.direction_block.right
             {
-                *player_sprite = asset_server.load("../assets/player_right_up.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_right_up.png");
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -426,7 +426,7 @@ fn move_all_players(
                 && !player.direction_block.up
                 && !player.direction_block.left
             {
-                *player_sprite = asset_server.load("../assets/player_left_up.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_left_up.png");
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -440,7 +440,7 @@ fn move_all_players(
                 && !player.direction_block.down
                 && !player.direction_block.right
             {
-                *player_sprite = asset_server.load("../assets/player_right_down.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_right_down.png");
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -454,7 +454,7 @@ fn move_all_players(
                 && !player.direction_block.down
                 && !player.direction_block.left
             {
-                *player_sprite = asset_server.load("../assets/player_left_down.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_left_down.png");
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -464,28 +464,28 @@ fn move_all_players(
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::Left;
             } else if keys.pressed(player.bindings.up) && !player.direction_block.up {
-                *player_sprite = asset_server.load("../assets/player_up.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_up.png");
                 let new_position =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Up;
                 player.direction.direction_x = Direction::None;
             } else if keys.pressed(player.bindings.down) && !player.direction_block.down {
-                *player_sprite = asset_server.load("../assets/player_down.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_down.png");
                 let new_position =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::None;
             } else if keys.pressed(player.bindings.right) && !player.direction_block.right {
-                *player_sprite = asset_server.load("../assets/player_right.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_right.png");
                 let new_position =
                     transform.translation.x + 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_x = Direction::Right;
                 player.direction.direction_y = Direction::None;
             } else if keys.pressed(player.bindings.left) && !player.direction_block.left {
-                *player_sprite = asset_server.load("../assets/player_left.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_left.png");
                 let new_position =
                     transform.translation.x - 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
@@ -515,7 +515,7 @@ fn spawn_totem(
                         custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                         ..default()
                     },
-                    texture: asset_server.load("../assets/dead.png"),
+                    texture: asset_server.load("../assets/images/dead.png"),
                     transform: Transform {
                         translation: Vec3 {
                             x: transform.translation.x,
@@ -551,7 +551,7 @@ fn player_shoot(
                         custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                         ..default()
                     },
-                    texture: asset_server.load("../assets/bullet.png"),
+                    texture: asset_server.load("../assets/images/bullet.png"),
                     transform: Transform {
                         translation: transform.translation
                             + Vec3 {
@@ -574,7 +574,7 @@ fn player_shoot(
                 associated_player: player.name.clone(),
                 timer_type: TimerType::Shoot,
             },));
-            let shoot_music = asset_server.load("../assets/shot.mp3");
+            let shoot_music = asset_server.load("../assets/sounds/shot.mp3");
             audio.play(shoot_music);
         }
         if keys.just_pressed(player.bindings.shoot_special) && !player.stunned && player.powerup {
@@ -587,9 +587,9 @@ fn player_shoot(
                         ..default()
                     },
                     texture: match player.power_up_type.clone().unwrap() {
-                        BulletType::IceBullet => asset_server.load("../assets/freezing_bullet.png"),
-                        BulletType::ExplosiveBullet => asset_server.load("../assets/granate.png"),
-                        _ => asset_server.load("../assets/bouncy_ball.png"),
+                        BulletType::IceBullet => asset_server.load("../assets/images/freezing_bullet.png"),
+                        BulletType::ExplosiveBullet => asset_server.load("../assets/images/granate.png"),
+                        _ => asset_server.load("../assets/images/bouncy_ball.png"),
                     },
                     transform: Transform {
                         translation: transform.translation
@@ -613,7 +613,7 @@ fn player_shoot(
             event_writer.send(UpdateUIEvent {
                 player_number: player.player_number as usize,
             });
-            let shoot_music = asset_server.load("../assets/shot.mp3");
+            let shoot_music = asset_server.load("../assets/sounds/shot.mp3");
             audio.play(shoot_music);
         }
     }
@@ -660,7 +660,7 @@ fn spawn_powerup(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/coin.png"),
+                texture: asset_server.load("../assets/images/coin.png"),
                 transform: powerup_transform,
                 ..default()
             },
@@ -716,7 +716,7 @@ fn spawn_ui(
                                 },
                                 ..default()
                             },
-                            image: asset_server.load("../assets/hud.png").into(),
+                            image: asset_server.load("../assets/images/hud.png").into(),
                             ..default()
                         })
                         .with_children(|subparent| {
@@ -751,7 +751,7 @@ fn spawn_ui(
                             justify_content: JustifyContent::Center,
                             ..default()
                         },
-                        image: asset_server.load("../assets/hud.png").into(),
+                        image: asset_server.load("../assets/images/hud.png").into(),
                         ..default()
                     })
                     .with_children(|subparent| {
