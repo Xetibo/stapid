@@ -53,6 +53,7 @@ fn main() {
         .add_system(clear_totems)
         .add_system(spawn_player)
         .add_system(spawn_totem)
+        .add_system(reset_powerup)
         .add_system(spawn_ui)
         .add_system(spawn_powerup)
         .add_system(player_invulnerable_blink)
@@ -77,6 +78,20 @@ fn clear_totems(
     for _ in event_reader.iter() {
         for entity in &totems {
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn reset_powerup(
+    mut commands: Commands,
+    powerups: Query<Entity, With<PowerUp>>,
+    mut event_reader: EventReader<ResetGameEvent>,
+    mut event_writer: EventWriter<PlayerPowerUpEvent>,
+) {
+    for _ in event_reader.iter() {
+        for entity in &powerups {
+            commands.entity(entity).despawn();
+            event_writer.send_default();
         }
     }
 }
@@ -602,58 +617,50 @@ fn player_shoot(
 fn spawn_powerup(
     mut commands: Commands,
     asset_server: ResMut<AssetServer>,
-    power_up_query: Query<Entity, With<PowerUp>>,
     collision_query: Query<&Transform, With<Collider>>,
     mut event_reader: EventReader<PlayerPowerUpEvent>,
 ) {
     for _ in event_reader.iter() {
-        let mut count = 0;
-        for _entity in &power_up_query {
-            count += 1;
-        }
-        while count < 2 {
-            let mut powerup_transform = Transform { ..default() };
-            loop {
-                let mut collided = false;
-                powerup_transform.translation = PowerUp::generate_random_position();
-                powerup_transform.scale = Vec3 {
-                    x: 40.0,
-                    y: 40.0,
-                    z: 0.0,
-                };
-                for transform in &collision_query {
-                    let collision = collide(
-                        transform.translation,
-                        transform.scale.truncate(),
-                        powerup_transform.translation,
-                        powerup_transform.scale.truncate(),
-                    );
-                    if collision.is_some() {
-                        collided = true;
-                        break;
-                    }
-                }
-                if !collided {
+        let mut powerup_transform = Transform { ..default() };
+        loop {
+            let mut collided = false;
+            powerup_transform.translation = PowerUp::generate_random_position();
+            powerup_transform.scale = Vec3 {
+                x: 40.0,
+                y: 40.0,
+                z: 0.0,
+            };
+            for transform in &collision_query {
+                let collision = collide(
+                    transform.translation,
+                    transform.scale.truncate(),
+                    powerup_transform.translation,
+                    powerup_transform.scale.truncate(),
+                );
+                if collision.is_some() {
+                    collided = true;
                     break;
                 }
             }
-            commands.spawn((
-                PowerUp {
-                    pickup_type: BulletType::IceBullet,
-                },
-                SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
-                        ..default()
-                    },
-                    texture: asset_server.load("../assets/coin.png"),
-                    transform: powerup_transform,
+            if !collided {
+                break;
+            }
+        }
+        commands.spawn((
+            PowerUp {
+                pickup_type: BulletType::IceBullet,
+            },
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                Collider,
-            ));
-            count += 1;
-        }
+                texture: asset_server.load("../assets/coin.png"),
+                transform: powerup_transform,
+                ..default()
+            },
+            Collider,
+        ));
     }
 }
 

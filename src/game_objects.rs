@@ -259,13 +259,13 @@ impl WallBundle {
                     },
                     scale: match entered_direction {
                         Direction::Up | Direction::Down => Vec3 {
-                            x: 1610.0,
+                            x: 1616.0,
                             y: WALL_THICKNESS,
                             z: (0.0),
                         },
                         Direction::Right | Direction::Left => Vec3 {
                             x: WALL_THICKNESS,
-                            y: 1010.0,
+                            y: 984.0,
                             z: (0.0),
                         },
                         Direction::None => Vec3 {
@@ -281,8 +281,8 @@ impl WallBundle {
                     ..default()
                 },
                 texture: match entered_direction {
-                    Direction::Up | Direction::Down => asset_server.load("../assets/bricks.png"),
-                    _ => asset_server.load("../assets/bricks.png"),
+                    Direction::Up | Direction::Down => asset_server.load("../assets/bricks_1616.png"),
+                    _ => asset_server.load("../assets/bricks_984.png"),
                 },
                 ..default()
             },
