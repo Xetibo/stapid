@@ -64,73 +64,73 @@ fn generate_walls(asset_server: &Res<AssetServer>) -> Vec<WallBundle> {
         Direction::Up,
         Direction::Right,
         asset_server,
-        "../assets/images/walls/bricks_100.png",
+        "../assets/images/walls/bricks_8_50.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Up,
         Direction::Left,
         asset_server,
-        "../assets/images/walls/bricks_100.png",
+        "../assets/images/walls/bricks_8_50.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Up,
         Direction::None,
         asset_server,
-        "../assets/images/walls/bricks_200_rotate.png",
+        "../assets/images/walls/bricks_8_100.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::Right,
         asset_server,
-        "../assets/images/walls/bricks_100.png",
+        "../assets/images/walls/bricks_8_50.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::Left,
         asset_server,
-        "../assets/images/walls/bricks_100.png",
+        "../assets/images/walls/bricks_8_50.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::None,
         asset_server,
-        "../assets/images/walls/bricks_200_rotate.png",
+        "../assets/images/walls/bricks_8_100.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Right,
         Direction::Up,
         asset_server,
-        "../assets/images/walls/bricks_200.png",
+        "../assets/images/walls/bricks_100_8.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Right,
         Direction::Down,
         asset_server,
-        "../assets/images/walls/bricks_200.png",
+        "../assets/images/walls/bricks_100_8.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Right,
         Direction::None,
         asset_server,
-        "../assets/images/walls/bricks_350.png",
+        "../assets/images/walls/bricks_175_8.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Left,
         Direction::Up,
         asset_server,
-        "../assets/images/walls/bricks_200.png",
+        "../assets/images/walls/bricks_100_8.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Left,
         Direction::Down,
         asset_server,
-        "../assets/images/walls/bricks_200.png",
+        "../assets/images/walls/bricks_100_8.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Left,
         Direction::None,
         asset_server,
-        "../assets/images/walls/bricks_350.png",
+        "../assets/images/walls/bricks_175_8.png",
     ));
     walls
 }

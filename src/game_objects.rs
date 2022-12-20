@@ -282,9 +282,9 @@ impl WallBundle {
                 },
                 texture: match entered_direction {
                     Direction::Up | Direction::Down => {
-                        asset_server.load("../assets/images/walls/bricks_1616.png")
+                        asset_server.load("../assets/images/walls/bricks_808_8.png")
                     }
-                    _ => asset_server.load("../assets/images/walls/bricks_984.png"),
+                    _ => asset_server.load("../assets/images/walls/bricks_8_492.png"),
                 },
                 ..default()
             },
