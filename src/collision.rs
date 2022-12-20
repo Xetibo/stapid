@@ -206,7 +206,7 @@ pub fn collision_bullet(
                         if player.invulnerable == false && player.stunned == false {
                             player.stunned = true;
                             *player_sprite = asset_server.load("../assets/player_frozen.png");
-                            let playerfrozen_sound = asset_server.load("../assets/frozen.ogg");
+                            let playerfrozen_sound = asset_server.load("../assets/frozen.wav");
                             audio.play(playerfrozen_sound);
                             commands.spawn((HitCooldownTimer {
                                 timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
