@@ -170,7 +170,7 @@ pub fn collision_bullet(
                     BulletType::NormalBullet => {
                         commands.entity(bullet_entity).despawn();
                         if !maybe_player.is_some() {
-                            let bulletwall_sound = asset_server.load("../assets/rockwall.mp3");
+                            let bulletwall_sound = asset_server.load("../assets/hitwall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }
@@ -198,7 +198,7 @@ pub fn collision_bullet(
                     BulletType::IceBullet => {
                         commands.entity(bullet_entity).despawn();
                         if !maybe_player.is_some() {
-                            let bulletwall_sound = asset_server.load("../assets/rockwall.mp3");
+                            let bulletwall_sound = asset_server.load("../assets/hitwall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }
@@ -272,7 +272,7 @@ pub fn collision_bullet(
                             if bullet.bounces_left < 1 {
                                 commands.entity(bullet_entity).despawn();
                             }
-                            let bulletwall_sound = asset_server.load("../assets/rockwall.mp3");
+                            let bulletwall_sound = asset_server.load("../assets/bouncywall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }
