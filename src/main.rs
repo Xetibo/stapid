@@ -537,6 +537,7 @@ fn player_shoot(
     mut players: Query<(&mut Player, &Transform)>,
     mut event_writer: EventWriter<UpdateUIEvent>,
     asset_server: ResMut<AssetServer>,
+    audio: Res<Audio>,
     keys: Res<Input<KeyCode>>,
 ) {
     for (mut player, transform) in &mut players {
@@ -573,6 +574,8 @@ fn player_shoot(
                 associated_player: player.name.clone(),
                 timer_type: TimerType::Shoot,
             },));
+            let shoot_music = asset_server.load("../assets/shot.wav");
+            audio.play(shoot_music);
         }
         if keys.just_pressed(player.bindings.shoot_special) && !player.stunned && player.powerup {
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
@@ -610,6 +613,8 @@ fn player_shoot(
             event_writer.send(UpdateUIEvent {
                 player_number: player.player_number as usize,
             });
+            let shoot_music = asset_server.load("../assets/shot.wav");
+            audio.play(shoot_music);
         }
     }
 }

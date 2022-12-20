@@ -53,6 +53,8 @@ pub fn collision_powerup(
     mut collider_query: Query<(Entity, &Transform, &PowerUp), With<Collider>>,
     mut event_writer: EventWriter<UpdateUIEvent>,
     mut event_writer_powerup: EventWriter<PlayerPowerUpEvent>,
+    asset_server: ResMut<AssetServer>,
+    audio: Res<Audio>,
 ) {
     for (player_transform, mut player) in &mut player_query {
         for (collider_entity, transform, _maybe_powerup) in &mut collider_query {
@@ -72,6 +74,8 @@ pub fn collision_powerup(
                     player_number: player.player_number as usize,
                 });
                 event_writer_powerup.send_default();
+                let pickup_sound = asset_server.load("../assets/powerup.wav");
+                audio.play(pickup_sound);
             }
         }
     }
@@ -149,6 +153,7 @@ pub fn collision_bullet(
     mut event_writer: EventWriter<UpdateUIEvent>,
     mut event_writer_player_hit: EventWriter<PlayerHitEvent>,
     asset_server: ResMut<AssetServer>,
+    audio: Res<Audio>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
@@ -164,41 +169,50 @@ pub fn collision_bullet(
                 match bullet.bullet_type {
                     BulletType::NormalBullet => {
                         commands.entity(bullet_entity).despawn();
-                        if maybe_player.is_some() {
-                            let player = &mut **maybe_player.as_mut().unwrap();
-                            if player.invulnerable == false {
-                                player.decrement_life();
-                                event_writer.send(UpdateUIEvent {
-                                    player_number: player.player_number as usize,
-                                });
-                                if player.lifes > 0 {
-                                    event_writer_player_hit.send_default();
-                                    player.stunned = false;
-                                    *player_sprite =
-                                        asset_server.load(player.get_direction_sprite());
-                                    player.invulnerable = true;
-                                    commands.spawn((HitCooldownTimer {
-                                        timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
-                                        associated_player: player.name.clone(),
-                                        timer_type: TimerType::Invulnerable,
-                                    },));
-                                }
+                        if !maybe_player.is_some() {
+                            let bulletwall_sound = asset_server.load("../assets/rockwall.mp3");
+                            audio.play(bulletwall_sound);
+                            continue;
+                        }
+                        let player = &mut **maybe_player.as_mut().unwrap();
+                        if player.invulnerable == false {
+                            player.decrement_life();
+                            event_writer.send(UpdateUIEvent {
+                                player_number: player.player_number as usize,
+                            });
+                            let playerhit_sound = asset_server.load("../assets/hit.wav");
+                            audio.play(playerhit_sound);
+                            if player.lifes > 0 {
+                                event_writer_player_hit.send_default();
+                                player.stunned = false;
+                                *player_sprite = asset_server.load(player.get_direction_sprite());
+                                player.invulnerable = true;
+                                commands.spawn((HitCooldownTimer {
+                                    timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                    associated_player: player.name.clone(),
+                                    timer_type: TimerType::Invulnerable,
+                                },));
                             }
                         }
                     }
                     BulletType::IceBullet => {
                         commands.entity(bullet_entity).despawn();
-                        if maybe_player.is_some() {
-                            let player = &mut **maybe_player.as_mut().unwrap();
-                            if player.invulnerable == false && player.stunned == false {
-                                player.stunned = true;
-                                *player_sprite = asset_server.load("../assets/player_frozen.png");
-                                commands.spawn((HitCooldownTimer {
-                                    timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
-                                    associated_player: player.name.clone(),
-                                    timer_type: TimerType::Stun,
-                                },));
-                            }
+                        if !maybe_player.is_some() {
+                            let bulletwall_sound = asset_server.load("../assets/rockwall.mp3");
+                            audio.play(bulletwall_sound);
+                            continue;
+                        }
+                        let player = &mut **maybe_player.as_mut().unwrap();
+                        if player.invulnerable == false && player.stunned == false {
+                            player.stunned = true;
+                            *player_sprite = asset_server.load("../assets/player_frozen.png");
+                            let playerfrozen_sound = asset_server.load("../assets/frozen.ogg");
+                            audio.play(playerfrozen_sound);
+                            commands.spawn((HitCooldownTimer {
+                                timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                associated_player: player.name.clone(),
+                                timer_type: TimerType::Stun,
+                            },));
                         }
                     }
                     BulletType::ExplosiveBullet => {
@@ -213,6 +227,8 @@ pub fn collision_bullet(
                             None,
                         );
                         let texture_atlas_handle = texture_atlases.add(texture_atlas);
+                        let explosion_sound = asset_server.load("../assets/explosion.mp3");
+                        audio.play(explosion_sound);
                         commands.spawn((
                             SpriteSheetBundle {
                                 sprite: TextureAtlasSprite {
@@ -252,11 +268,12 @@ pub fn collision_bullet(
                             },
                         };
                         bullet.bounces_left -= 1;
-                        if bullet.bounces_left < 1 {
-                            commands.entity(bullet_entity).despawn();
-                            continue;
-                        }
                         if !maybe_player.is_some() {
+                            if bullet.bounces_left < 1 {
+                                commands.entity(bullet_entity).despawn();
+                            }
+                            let bulletwall_sound = asset_server.load("../assets/rockwall.mp3");
+                            audio.play(bulletwall_sound);
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
@@ -268,6 +285,8 @@ pub fn collision_bullet(
                         event_writer.send(UpdateUIEvent {
                             player_number: player.player_number as usize,
                         });
+                        let playerhit_sound = asset_server.load("../assets/hit.wav");
+                        audio.play(playerhit_sound);
                         if player.lifes > 0 {
                             event_writer_player_hit.send_default();
                             commands.entity(bullet_entity).despawn();
