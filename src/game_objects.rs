@@ -66,6 +66,7 @@ pub struct UINode {}
 pub struct UIText {}
 
 impl Player {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         number: i32,
         entered_name: String,
@@ -151,12 +152,10 @@ impl Bullet {
         direction: &DirectionHelper,
     ) -> Bullet {
         match entered_bullet_type.unwrap() {
-            bullet_type => match bullet_type {
-                BulletType::NormalBullet => Self::normal_bullet(direction.clone()),
-                BulletType::IceBullet => Self::ice_bullet(direction.clone()),
-                BulletType::ExplosiveBullet => Self::explosive_bullet(direction.clone()),
-                BulletType::BouncyBullet => Self::bouncy_bullet(direction.clone()),
-            },
+            BulletType::NormalBullet => Self::normal_bullet(direction.clone()),
+            BulletType::IceBullet => Self::ice_bullet(direction.clone()),
+            BulletType::ExplosiveBullet => Self::explosive_bullet(direction.clone()),
+            BulletType::BouncyBullet => Self::bouncy_bullet(direction.clone()),
         }
     }
 
