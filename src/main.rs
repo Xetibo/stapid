@@ -782,14 +782,12 @@ fn update_ui(
     mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
 ) {
     for event in event_reader_hit.iter() {
-        let mut count = 0;
         let mut text_nodes = text_query.iter_mut();
         for player in &player_query {
             if player.player_number as usize != event.player_number {
-                count += 1;
                 continue;
             }
-            let mut maybe_node = text_nodes.nth(count);
+            let mut maybe_node = text_nodes.nth(event.player_number - 1);
             let text_node = &mut **maybe_node.as_mut().unwrap();
             if player.lifes < 1 {
                 *text_node = Text::from_section(
