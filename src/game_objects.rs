@@ -284,7 +284,7 @@ impl WallBundle {
                     Direction::Up | Direction::Down => {
                         asset_server.load("../assets/images/walls/bricks_808_8.png")
                     }
-                    _ => asset_server.load("../assets/images/walls/bricks_8_492.png"),
+                    _ => asset_server.load("../assets/images/walls/bricks_8_492_rotate.png"),
                 },
                 ..default()
             },

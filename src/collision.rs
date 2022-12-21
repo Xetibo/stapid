@@ -170,7 +170,8 @@ pub fn collision_bullet(
                     BulletType::NormalBullet => {
                         commands.entity(bullet_entity).despawn();
                         if !maybe_player.is_some() {
-                            let bulletwall_sound = asset_server.load("../assets/sounds/hitwall.wav");
+                            let bulletwall_sound =
+                                asset_server.load("../assets/sounds/hitwall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }
@@ -198,15 +199,18 @@ pub fn collision_bullet(
                     BulletType::IceBullet => {
                         commands.entity(bullet_entity).despawn();
                         if !maybe_player.is_some() {
-                            let bulletwall_sound = asset_server.load("../assets/sounds/hitwall.wav");
+                            let bulletwall_sound =
+                                asset_server.load("../assets/sounds/hitwall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
                         if player.invulnerable == false && player.stunned == false {
                             player.stunned = true;
-                            *player_sprite = asset_server.load("../assets/images/player/player_frozen.png");
-                            let playerfrozen_sound = asset_server.load("../assets/sounds/frozen.wav");
+                            *player_sprite =
+                                asset_server.load("../assets/images/player/player_frozen.png");
+                            let playerfrozen_sound =
+                                asset_server.load("../assets/sounds/frozen.wav");
                             audio.play(playerfrozen_sound);
                             commands.spawn((HitCooldownTimer {
                                 timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
@@ -217,7 +221,8 @@ pub fn collision_bullet(
                     }
                     BulletType::ExplosiveBullet => {
                         commands.entity(bullet_entity).despawn();
-                        let texture_handle = asset_server.load("../assets/images/explosion_anim.png");
+                        let texture_handle =
+                            asset_server.load("../assets/images/explosion_anim.png");
                         let texture_atlas = TextureAtlas::from_grid(
                             texture_handle,
                             Vec2::new(32.0, 32.0),
@@ -271,8 +276,13 @@ pub fn collision_bullet(
                         if !maybe_player.is_some() {
                             if bullet.bounces_left < 1 {
                                 commands.entity(bullet_entity).despawn();
+                                let bulletwall_sound =
+                                    asset_server.load("../assets/sounds/hitwall.wav");
+                                audio.play(bulletwall_sound);
+                                continue;
                             }
-                            let bulletwall_sound = asset_server.load("../assets/sounds/bouncywall.wav");
+                            let bulletwall_sound =
+                                asset_server.load("../assets/sounds/bouncywall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }

@@ -26,9 +26,11 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     window: WindowDescriptor {
+                        width: 1920.0,
+                        height: 1080.0,
                         title: String::from("stapid"),
                         resizable: true,
-                        decorations: false,
+                        decorations: true,
                         // monitor: MonitorSelection::Index(0),
                         // mode: WindowMode::Fullscreen,
                         ..default()
@@ -587,8 +589,12 @@ fn player_shoot(
                         ..default()
                     },
                     texture: match player.power_up_type.clone().unwrap() {
-                        BulletType::IceBullet => asset_server.load("../assets/images/freezing_bullet.png"),
-                        BulletType::ExplosiveBullet => asset_server.load("../assets/images/granate.png"),
+                        BulletType::IceBullet => {
+                            asset_server.load("../assets/images/freezing_bullet.png")
+                        }
+                        BulletType::ExplosiveBullet => {
+                            asset_server.load("../assets/images/granate.png")
+                        }
                         _ => asset_server.load("../assets/images/bouncy_ball.png"),
                     },
                     transform: Transform {

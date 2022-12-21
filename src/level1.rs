@@ -64,37 +64,37 @@ fn generate_walls(asset_server: &Res<AssetServer>) -> Vec<WallBundle> {
         Direction::Up,
         Direction::Right,
         asset_server,
-        "../assets/images/walls/bricks_8_50.png",
+        "../assets/images/walls/bricks_8_50_rotate.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Up,
         Direction::Left,
         asset_server,
-        "../assets/images/walls/bricks_8_50.png",
+        "../assets/images/walls/bricks_8_50_rotate.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Up,
         Direction::None,
         asset_server,
-        "../assets/images/walls/bricks_8_100.png",
+        "../assets/images/walls/bricks_8_100_rotate.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::Right,
         asset_server,
-        "../assets/images/walls/bricks_8_50.png",
+        "../assets/images/walls/bricks_8_50_rotate.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::Left,
         asset_server,
-        "../assets/images/walls/bricks_8_50.png",
+        "../assets/images/walls/bricks_8_50_rotate.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Down,
         Direction::None,
         asset_server,
-        "../assets/images/walls/bricks_8_100.png",
+        "../assets/images/walls/bricks_8_100_rotate.png",
     ));
     walls.push(create_spawn_wall(
         Direction::Right,
