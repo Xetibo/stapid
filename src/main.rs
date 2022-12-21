@@ -713,7 +713,7 @@ fn spawn_ui(
                     parent
                         .spawn(ImageBundle {
                             style: Style {
-                                size: Size::new(Val::Px(150.0), Val::Px(140.0)),
+                                size: Size::new(Val::Px(144.0), Val::Px(108.0)),
                                 padding: UiRect {
                                     left: Val::Px(20.0),
                                     right: Val::Px(20.0),
@@ -722,7 +722,7 @@ fn spawn_ui(
                                 },
                                 ..default()
                             },
-                            image: asset_server.load("../assets/images/hud.png").into(),
+                            image: asset_server.load("../assets/images/hud_64_48.png").into(),
                             ..default()
                         })
                         .with_children(|subparent| {
@@ -730,8 +730,8 @@ fn spawn_ui(
                                 TextBundle::from_section(
                                     format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
                                     TextStyle {
-                                        font: asset_server.load("fonts/font.ttf"),
-                                        font_size: 30.0,
+                                        font: asset_server.load("fonts/PixeloidSans.ttf"),
+                                        font_size: 20.0,
                                         color: Color::WHITE,
                                     },
                                 )
@@ -746,7 +746,7 @@ fn spawn_ui(
                 parent
                     .spawn(ButtonBundle {
                         style: Style {
-                            size: Size::new(Val::Px(100.0), Val::Px(60.0)),
+                            size: Size::new(Val::Px(128.0), Val::Px(64.0)),
                             margin: UiRect::all(Val::Px(8.0)),
                             padding: UiRect {
                                 left: Val::Px(17.0),
@@ -757,14 +757,14 @@ fn spawn_ui(
                             justify_content: JustifyContent::Center,
                             ..default()
                         },
-                        image: asset_server.load("../assets/images/hud.png").into(),
+                        image: asset_server.load("../assets/images/hud_64_32.png").into(),
                         ..default()
                     })
                     .with_children(|subparent| {
                         subparent.spawn(TextBundle::from_section(
                             "Reset",
                             TextStyle {
-                                font: asset_server.load("fonts/font.ttf"),
+                                font: asset_server.load("fonts/PixeloidSans.ttf"),
                                 font_size: 30.0,
                                 color: Color::WHITE,
                             },
@@ -793,8 +793,8 @@ fn update_ui(
                 *text_node = Text::from_section(
                     "",
                     TextStyle {
-                        font: asset_server.load("fonts/font.ttf"),
-                        font_size: 30.0,
+                        font: asset_server.load("fonts/PixeloidSans.ttf"),
+                        font_size: 20.0,
                         color: Color::WHITE,
                     },
                 );
@@ -811,8 +811,8 @@ fn update_ui(
                     player.player_number, player.lifes, powerup
                 ),
                 TextStyle {
-                    font: asset_server.load("fonts/font.ttf"),
-                    font_size: 30.0,
+                    font: asset_server.load("fonts/PixeloidSans.ttf"),
+                    font_size: 20.0,
                     color: Color::WHITE,
                 },
             );
