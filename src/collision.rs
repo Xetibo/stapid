@@ -232,7 +232,7 @@ pub fn collision_bullet(
                             None,
                         );
                         let texture_atlas_handle = texture_atlases.add(texture_atlas);
-                        let explosion_sound = asset_server.load("../assets/sounds/explosion.mp3");
+                        let explosion_sound = asset_server.load("../assets/sounds/explosion.wav");
                         audio.play(explosion_sound);
                         commands.spawn((
                             SpriteSheetBundle {

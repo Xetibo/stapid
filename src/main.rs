@@ -576,7 +576,7 @@ fn player_shoot(
                 associated_player: player.name.clone(),
                 timer_type: TimerType::Shoot,
             },));
-            let shoot_music = asset_server.load("../assets/sounds/shot.mp3");
+            let shoot_music = asset_server.load("../assets/sounds/shot.wav");
             audio.play(shoot_music);
         }
         if keys.just_pressed(player.bindings.shoot_special) && !player.stunned && player.powerup {
@@ -619,7 +619,7 @@ fn player_shoot(
             event_writer.send(UpdateUIEvent {
                 player_number: player.player_number as usize,
             });
-            let shoot_music = asset_server.load("../assets/sounds/shot.mp3");
+            let shoot_music = asset_server.load("../assets/sounds/shot.wav");
             audio.play(shoot_music);
         }
     }
