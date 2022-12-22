@@ -408,7 +408,7 @@ fn move_all_players(
     asset_server: Res<AssetServer>,
 ) {
     for (mut player, mut transform, mut player_sprite) in &mut players {
-        if player.stunned == false {
+        if !player.stunned {
             if keys.pressed(player.bindings.up)
                 && keys.pressed(player.bindings.right)
                 && !player.direction_block.up
@@ -826,6 +826,7 @@ fn reset_clicked(
     mut event_writer: EventWriter<ResetGameEvent>,
 ) {
     for interaction in &interaction_query {
+        #[allow(clippy::single_match)]
         match *interaction {
             Interaction::Clicked => {
                 event_writer.send_default();

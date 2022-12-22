@@ -81,6 +81,7 @@ pub fn collision_powerup(
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn collision_player(
     collider_query: Query<
         &Transform,
@@ -99,14 +100,12 @@ pub fn collision_player(
         let mut b_was_collision_right = false;
         let mut b_was_collision_left = false;
         for transform in collider_query.iter() {
-            let collision = collide(
+            if let Some(direction) = collide(
                 transform.translation,
                 transform.scale.truncate(),
                 player_transform.translation,
                 player_transform.scale.truncate() + 1.15,
-            );
-            if collision.is_some() {
-                let direction = collision.unwrap();
+            ) {
                 match direction {
                     Collision::Right => {
                         player.direction_block.right = true;
@@ -143,6 +142,8 @@ pub fn collision_player(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::type_complexity)]
 pub fn collision_bullet(
     mut commands: Commands,
     mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
@@ -159,24 +160,23 @@ pub fn collision_bullet(
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
         let bullet_size = bullet_transform.scale.truncate();
         for (transform, mut player_sprite, mut maybe_player) in &mut collider_query {
-            let collision = collide(
+            if let Some(collision) = collide(
                 bullet_transform.translation,
                 bullet_size,
                 transform.translation,
                 transform.scale.truncate(),
-            );
-            if collision.is_some() {
+            ) {
                 match bullet.bullet_type {
                     BulletType::NormalBullet => {
                         commands.entity(bullet_entity).despawn();
-                        if !maybe_player.is_some() {
+                        if maybe_player.is_none() {
                             let bulletwall_sound =
                                 asset_server.load("../assets/sounds/hitwall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
-                        if player.invulnerable == false {
+                        if !player.invulnerable {
                             player.decrement_life();
                             event_writer.send(UpdateUIEvent {
                                 player_number: player.player_number as usize,
@@ -198,14 +198,14 @@ pub fn collision_bullet(
                     }
                     BulletType::IceBullet => {
                         commands.entity(bullet_entity).despawn();
-                        if !maybe_player.is_some() {
+                        if maybe_player.is_none() {
                             let bulletwall_sound =
                                 asset_server.load("../assets/sounds/hitwall.wav");
                             audio.play(bulletwall_sound);
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
-                        if player.invulnerable == false && player.stunned == false {
+                        if !player.invulnerable && !player.stunned {
                             player.stunned = true;
                             *player_sprite =
                                 asset_server.load("../assets/images/player/player_frozen.png");
@@ -261,8 +261,7 @@ pub fn collision_bullet(
                         ));
                     }
                     BulletType::BouncyBullet => {
-                        let direction_collision = collision.unwrap();
-                        bullet.direction = match direction_collision {
+                        bullet.direction = match collision {
                             Collision::Left | Collision::Right => DirectionHelper {
                                 direction_x: bullet.direction.direction_x.opposite(),
                                 direction_y: bullet.direction.direction_y.clone(),
@@ -273,7 +272,7 @@ pub fn collision_bullet(
                             },
                         };
                         bullet.bounces_left -= 1;
-                        if !maybe_player.is_some() {
+                        if maybe_player.is_none() {
                             if bullet.bounces_left < 1 {
                                 commands.entity(bullet_entity).despawn();
                                 let bulletwall_sound =
