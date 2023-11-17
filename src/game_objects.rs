@@ -1,12 +1,11 @@
 use crate::Collider;
 use bevy::prelude::*;
-use bevy_inspector_egui::Inspectable;
 
 use crate::constants::{WALL_BOTTOM, WALL_LEFT, WALL_RIGHT, WALL_THICKNESS, WALL_TOP};
 use crate::game_utils::{Bindings, BulletType, Direction, DirectionBlock, DirectionHelper};
 use rand::prelude::*;
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Player {
     pub player_number: i32,
     pub size: i32,
@@ -23,7 +22,7 @@ pub struct Player {
     pub power_up_type: Option<BulletType>,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Bullet {
     pub bullet_type: BulletType,
     pub speed: f32,
@@ -35,12 +34,12 @@ pub struct Bullet {
     pub color: Color,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Explosion {
     pub radius: f32,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct PowerUp {
     pub pickup_type: BulletType,
 }
@@ -56,7 +55,7 @@ pub struct WallBundle {
 #[derive(Component)]
 pub struct Totem {}
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Wall {}
 
 #[derive(Component)]
@@ -113,38 +112,38 @@ impl Player {
 
     pub fn get_bullet_spawn_position(&self) -> (f32, f32) {
         let bullet_x = match self.direction.direction_x {
-            Direction::Right => 41.0,
-            Direction::Left => -41.0,
+            Direction::Right => 43.0,
+            Direction::Left => -43.0,
             _ => 0.0,
         };
         let bullet_y = match self.direction.direction_y {
-            Direction::Up => 41.0,
-            Direction::Down => -41.0,
+            Direction::Up => 43.0,
+            Direction::Down => -43.0,
             _ => 0.0,
         };
         (bullet_x, bullet_y)
     }
 
-    pub fn get_direction_sprite(&self) -> &str {
-        match &self.direction.direction_x {
-            Direction::Right => match &self.direction.direction_y {
+}
+    pub fn get_direction_sprite(x: &Direction, y: &Direction) -> &'static str {
+        match x {
+            Direction::Right => match y {
                 Direction::Up => "../assets/images/player/player_right_up.png",
                 Direction::Down => "../assets/images/player/player_right_down.png",
                 _ => "../assets/images/player/player_right.png",
             },
-            Direction::Left => match &self.direction.direction_y {
+            Direction::Left => match y {
                 Direction::Up => "../assets/images/player/player_left_up.png",
                 Direction::Down => "../assets/images/player/player_left_down.png",
                 _ => "../assets/images/player/player_left.png",
             },
-            _ => match &self.direction.direction_y {
+            _ => match y {
                 Direction::Up => "../assets/images/player/player_up.png",
                 Direction::Down => "../assets/images/player/player_down.png",
                 _ => "",
             },
         }
     }
-}
 
 impl Bullet {
     pub fn bullet_from_enum(
@@ -162,7 +161,7 @@ impl Bullet {
     pub fn normal_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::NormalBullet,
-            speed: 10.0,
+            speed: 20.0,
             area_of_effect: 1.0,
             stuns: false,
             bounces: false,
@@ -175,7 +174,7 @@ impl Bullet {
     pub fn ice_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::IceBullet,
-            speed: 20.0,
+            speed: 40.0,
             area_of_effect: 1.0,
             stuns: true,
             bounces: false,
@@ -188,7 +187,7 @@ impl Bullet {
     pub fn explosive_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::ExplosiveBullet,
-            speed: 6.0,
+            speed: 10.0,
             area_of_effect: 5.0,
             stuns: false,
             bounces: false,
@@ -201,7 +200,7 @@ impl Bullet {
     pub fn bouncy_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::BouncyBullet,
-            speed: 15.0,
+            speed: 20.0,
             area_of_effect: 1.0,
             stuns: false,
             bounces: true,

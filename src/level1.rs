@@ -139,7 +139,7 @@ fn create_spawn_wall(
     direction_wall: Direction,
     direction: Direction,
     asset_server: &Res<AssetServer>,
-    asset: &str,
+    asset: &'static str,
 ) -> WallBundle {
     let (wall_x, wall_y, wall_scale_x, wall_scale_y) = get_vals(direction_wall, direction);
     WallBundle {

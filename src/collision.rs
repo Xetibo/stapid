@@ -1,4 +1,4 @@
-use crate::game_objects::{Bullet, Explosion, Player, PowerUp};
+use crate::game_objects::{get_direction_sprite, Bullet, Explosion, Player, PowerUp};
 use crate::game_utils::{
     AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerHitEvent,
     PlayerPowerUpEvent, TimerType, UpdateUIEvent,
@@ -28,7 +28,10 @@ pub fn collision_explosion(
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
-                *player_sprite = asset_server.load(player.get_direction_sprite());
+                *player_sprite = asset_server.load(get_direction_sprite(
+                    &player.direction.direction_x,
+                    &player.direction.direction_y,
+                ));
                 player.lifes -= 2;
                 event_writer.send(UpdateUIEvent {
                     player_number: player.player_number as usize,
@@ -54,7 +57,6 @@ pub fn collision_powerup(
     mut event_writer: EventWriter<UpdateUIEvent>,
     mut event_writer_powerup: EventWriter<PlayerPowerUpEvent>,
     asset_server: ResMut<AssetServer>,
-    audio: Res<Audio>,
 ) {
     for (player_transform, mut player) in &mut player_query {
         for (collider_entity, transform, _maybe_powerup) in &mut collider_query {
@@ -74,8 +76,11 @@ pub fn collision_powerup(
                     player_number: player.player_number as usize,
                 });
                 event_writer_powerup.send_default();
-                let pickup_sound = asset_server.load("../assets/sounds/powerup.wav");
-                audio.play(pickup_sound);
+
+                commands.spawn(AudioBundle {
+                    source: asset_server.load("../assets/sounds/powerup.wav"),
+                    ..default()
+                });
             }
         }
     }
@@ -154,7 +159,6 @@ pub fn collision_bullet(
     mut event_writer: EventWriter<UpdateUIEvent>,
     mut event_writer_player_hit: EventWriter<PlayerHitEvent>,
     asset_server: ResMut<AssetServer>,
-    audio: Res<Audio>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
@@ -170,9 +174,10 @@ pub fn collision_bullet(
                     BulletType::NormalBullet => {
                         commands.entity(bullet_entity).despawn();
                         if maybe_player.is_none() {
-                            let bulletwall_sound =
-                                asset_server.load("../assets/sounds/hitwall.wav");
-                            audio.play(bulletwall_sound);
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                ..default()
+                            });
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
@@ -181,12 +186,17 @@ pub fn collision_bullet(
                             event_writer.send(UpdateUIEvent {
                                 player_number: player.player_number as usize,
                             });
-                            let playerhit_sound = asset_server.load("../assets/sounds/hit.wav");
-                            audio.play(playerhit_sound);
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/hit.wav"),
+                                ..default()
+                            });
                             if player.lifes > 0 {
                                 event_writer_player_hit.send_default();
                                 player.stunned = false;
-                                *player_sprite = asset_server.load(player.get_direction_sprite());
+                                *player_sprite = asset_server.load(get_direction_sprite(
+                                    &player.direction.direction_x,
+                                    &player.direction.direction_y,
+                                ));
                                 player.invulnerable = true;
                                 commands.spawn((HitCooldownTimer {
                                     timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
@@ -199,9 +209,10 @@ pub fn collision_bullet(
                     BulletType::IceBullet => {
                         commands.entity(bullet_entity).despawn();
                         if maybe_player.is_none() {
-                            let bulletwall_sound =
-                                asset_server.load("../assets/sounds/hitwall.wav");
-                            audio.play(bulletwall_sound);
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                ..default()
+                            });
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
@@ -209,9 +220,10 @@ pub fn collision_bullet(
                             player.stunned = true;
                             *player_sprite =
                                 asset_server.load("../assets/images/player/player_frozen.png");
-                            let playerfrozen_sound =
-                                asset_server.load("../assets/sounds/frozen.wav");
-                            audio.play(playerfrozen_sound);
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/frozen.wav"),
+                                ..default()
+                            });
                             commands.spawn((HitCooldownTimer {
                                 timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
                                 associated_player: player.name.clone(),
@@ -232,8 +244,10 @@ pub fn collision_bullet(
                             None,
                         );
                         let texture_atlas_handle = texture_atlases.add(texture_atlas);
-                        let explosion_sound = asset_server.load("../assets/sounds/explosion.wav");
-                        audio.play(explosion_sound);
+                        commands.spawn(AudioBundle {
+                            source: asset_server.load("../assets/sounds/explosion.wav"),
+                            ..default()
+                        });
                         commands.spawn((
                             SpriteSheetBundle {
                                 sprite: TextureAtlasSprite {
@@ -275,18 +289,23 @@ pub fn collision_bullet(
                         if maybe_player.is_none() {
                             if bullet.bounces_left < 1 {
                                 commands.entity(bullet_entity).despawn();
-                                let bulletwall_sound =
-                                    asset_server.load("../assets/sounds/hitwall.wav");
-                                audio.play(bulletwall_sound);
+                                commands.spawn(AudioBundle {
+                                    source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                    ..default()
+                                });
                                 continue;
                             }
-                            let bulletwall_sound =
-                                asset_server.load("../assets/sounds/bouncywall.wav");
-                            audio.play(bulletwall_sound);
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/bouncywall.wav"),
+                                ..default()
+                            });
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
-                        *player_sprite = asset_server.load(player.get_direction_sprite());
+                        *player_sprite = asset_server.load(get_direction_sprite(
+                            &player.direction.direction_x,
+                            &player.direction.direction_y,
+                        ));
                         if player.invulnerable {
                             continue;
                         }
@@ -294,8 +313,10 @@ pub fn collision_bullet(
                         event_writer.send(UpdateUIEvent {
                             player_number: player.player_number as usize,
                         });
-                        let playerhit_sound = asset_server.load("../assets/sounds/hit.wav");
-                        audio.play(playerhit_sound);
+                        commands.spawn(AudioBundle {
+                            source: asset_server.load("../assets/sounds/hit.wav"),
+                            ..default()
+                        });
                         if player.lifes > 0 {
                             event_writer_player_hit.send_default();
                             commands.entity(bullet_entity).despawn();
