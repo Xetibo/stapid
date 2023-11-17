@@ -6,10 +6,10 @@ use bevy::prelude::*;
 
 const WALL_V_LENGTH_SPAWN: f32 = 200.0;
 const WALL_H_LENGTH_SPAWN: f32 = 100.0;
-const WALL_H_LEFT_X: f32 = -600.0;
-const WALL_H_RIGHT_X: f32 = 600.0;
-const WALL_H_TOP_Y: f32 = 350.0;
-const WALL_H_BOTTOM_Y: f32 = -350.0;
+const WALL_H_LEFT_X: f32 = -603.0;
+const WALL_H_RIGHT_X: f32 = 603.0;
+const WALL_H_TOP_Y: f32 = 358.0;
+const WALL_H_BOTTOM_Y: f32 = -358.0;
 const WALL_H_MIDDLE_X: f32 = 0.0;
 const WALL_H_MIDDLE_TOP_Y: f32 = 395.0;
 const WALL_H_MIDDLE_BOTTOM_Y: f32 = -395.0;
@@ -26,33 +26,121 @@ pub fn spawn_level_1(
     mut commands: Commands,
     mut event_writer: EventWriter<ResetGameEvent>,
     mut event_writer_powerup: EventWriter<PlayerPowerUpEvent>,
+    asset_server: Res<AssetServer>,
 ) {
     event_writer.send_default();
     event_writer_powerup.send_default();
-    let walls = generate_walls();
+    event_writer_powerup.send_default();
+    let walls = generate_walls(&asset_server);
     for wall in walls {
         commands.spawn((wall, Wall {}));
     }
+    commands.spawn(SpriteBundle {
+        transform: Transform {
+            translation: Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            scale: Vec3 {
+                x: 1920.0,
+                y: 1080.0,
+                z: 0.0,
+            },
+            ..default()
+        },
+        sprite: Sprite {
+            custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
+            ..default()
+        },
+        texture: asset_server.load("../assets/images/floor_bricks_960_540.png"),
+        ..default()
+    });
 }
 
-fn generate_walls() -> Vec<WallBundle> {
-    let mut walls: Vec<WallBundle> = Vec::new();
-    walls.push(create_spawn_wall(Direction::Up, Direction::Right));
-    walls.push(create_spawn_wall(Direction::Up, Direction::Left));
-    walls.push(create_spawn_wall(Direction::Up, Direction::None));
-    walls.push(create_spawn_wall(Direction::Down, Direction::Right));
-    walls.push(create_spawn_wall(Direction::Down, Direction::Left));
-    walls.push(create_spawn_wall(Direction::Down, Direction::None));
-    walls.push(create_spawn_wall(Direction::Right, Direction::Up));
-    walls.push(create_spawn_wall(Direction::Right, Direction::Down));
-    walls.push(create_spawn_wall(Direction::Right, Direction::None));
-    walls.push(create_spawn_wall(Direction::Left, Direction::Up));
-    walls.push(create_spawn_wall(Direction::Left, Direction::Down));
-    walls.push(create_spawn_wall(Direction::Left, Direction::None));
-    walls
+fn generate_walls(asset_server: &Res<AssetServer>) -> Vec<WallBundle> {
+    vec![
+        create_spawn_wall(
+            Direction::Up,
+            Direction::Right,
+            asset_server,
+            "../assets/images/walls/bricks_8_50_rotate.png",
+        ),
+        create_spawn_wall(
+            Direction::Up,
+            Direction::Left,
+            asset_server,
+            "../assets/images/walls/bricks_8_50_rotate.png",
+        ),
+        create_spawn_wall(
+            Direction::Up,
+            Direction::None,
+            asset_server,
+            "../assets/images/walls/bricks_8_100_rotate.png",
+        ),
+        create_spawn_wall(
+            Direction::Down,
+            Direction::Right,
+            asset_server,
+            "../assets/images/walls/bricks_8_50_rotate.png",
+        ),
+        create_spawn_wall(
+            Direction::Down,
+            Direction::Left,
+            asset_server,
+            "../assets/images/walls/bricks_8_50_rotate.png",
+        ),
+        create_spawn_wall(
+            Direction::Down,
+            Direction::None,
+            asset_server,
+            "../assets/images/walls/bricks_8_100_rotate.png",
+        ),
+        create_spawn_wall(
+            Direction::Right,
+            Direction::Up,
+            asset_server,
+            "../assets/images/walls/bricks_100_8.png",
+        ),
+        create_spawn_wall(
+            Direction::Right,
+            Direction::Down,
+            asset_server,
+            "../assets/images/walls/bricks_100_8.png",
+        ),
+        create_spawn_wall(
+            Direction::Right,
+            Direction::None,
+            asset_server,
+            "../assets/images/walls/bricks_175_8.png",
+        ),
+        create_spawn_wall(
+            Direction::Left,
+            Direction::Up,
+            asset_server,
+            "../assets/images/walls/bricks_100_8.png",
+        ),
+        create_spawn_wall(
+            Direction::Left,
+            Direction::Down,
+            asset_server,
+            "../assets/images/walls/bricks_100_8.png",
+        ),
+        create_spawn_wall(
+            Direction::Left,
+            Direction::None,
+            asset_server,
+            "../assets/images/walls/bricks_175_8.png",
+        ),
+    ]
 }
 
-fn create_spawn_wall(direction_wall: Direction, direction: Direction) -> WallBundle {
+fn create_spawn_wall(
+    direction_wall: Direction,
+    direction: Direction,
+    asset_server: &Res<AssetServer>,
+    asset: &'static str,
+) -> WallBundle {
     let (wall_x, wall_y, wall_scale_x, wall_scale_y) = get_vals(direction_wall, direction);
     WallBundle {
         direction: Direction::None,
@@ -61,19 +149,20 @@ fn create_spawn_wall(direction_wall: Direction, direction: Direction) -> WallBun
                 translation: Vec3 {
                     x: wall_x,
                     y: wall_y,
-                    z: (0.0),
+                    z: (2.0),
                 },
                 scale: Vec3 {
                     x: wall_scale_x,
                     y: wall_scale_y,
-                    z: (1.0),
+                    z: (0.0),
                 },
                 ..default()
             },
             sprite: Sprite {
-                color: Color::rgb(1.0, 0.0, 0.0),
+                custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                 ..default()
             },
+            texture: asset_server.load(asset),
             ..default()
         },
         collider: Collider,

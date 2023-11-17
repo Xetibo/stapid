@@ -1,4 +1,4 @@
-pub const WALL_THICKNESS: f32 = 10.0;
+pub const WALL_THICKNESS: f32 = 16.0;
 pub const WALL_TOP: f32 = -500.0;
 pub const WALL_BOTTOM: f32 = 500.0;
 pub const WALL_LEFT: f32 = -800.0;

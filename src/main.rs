@@ -1,5 +1,6 @@
+use bevy::window::WindowTheme;
 use bevy::{prelude::*, sprite::collide_aabb::collide, utils::Duration};
-use bevy_inspector_egui::{RegisterInspectable, WorldInspectorPlugin};
+use game_objects::get_direction_sprite;
 
 pub mod game_utils;
 use crate::game_utils::{
@@ -9,7 +10,7 @@ use crate::game_utils::{
 };
 
 pub mod game_objects;
-use crate::game_objects::{Bullet, Player, PowerUp, Totem, UINode, UIText, Wall, WallBundle};
+use crate::game_objects::{Bullet, Player, PowerUp, Totem, UINode, UIText, WallBundle};
 
 pub mod constants;
 use crate::constants::{BOTTOM_BOUND, LEFT_BOUND, PLAYER_SIZE, RIGHT_BOUND, TOP_BOUND};
@@ -22,48 +23,78 @@ use level1::spawn_level_1;
 
 fn main() {
     App::new()
-        .add_plugins(
-            DefaultPlugins
-                .set(WindowPlugin {
-                    window: WindowDescriptor {
-                        title: String::from("stapid"),
-                        resizable: true,
-                        decorations: false,
-                        ..default()
-                    },
-                    ..default()
-                })
-                .set(ImagePlugin::default_nearest()),
-        )
-        .add_plugin(WorldInspectorPlugin::new())
-        .register_inspectable::<Player>()
-        .register_inspectable::<Bullet>()
-        .register_inspectable::<Wall>()
+        // expand functionality
+        .add_plugins((DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "stapid".into(),
+                resolution: (1920., 1080.).into(),
+                prevent_default_event_handling: false,
+                window_theme: Some(WindowTheme::Dark),
+                enabled_buttons: bevy::window::EnabledButtons {
+                    maximize: true,
+                    ..Default::default()
+                },
+                // This will spawn an invisible window
+                // The window will be made visible in the make_visible() system after 3 frames.
+                // This is useful when you want to avoid the white window that shows up before the GPU is ready to render the app.
+                visible: false,
+                ..default()
+            }),
+            ..default()
+        }),))
+        // debug functionality
+        // .register_inspectable::<Player>()
+        // .register_inspectable::<Bullet>()
+        // .register_inspectable::<Wall>()
+        // events
         .add_event::<ResetGameEvent>()
         .add_event::<UpdateUIEvent>()
         .add_event::<PlayerDeadEvent>()
         .add_event::<PlayerHitEvent>()
         .add_event::<PlayerPowerUpEvent>()
-        .add_startup_system(spawn_walls)
-        .add_startup_system(spawn_level_1)
-        .add_startup_system(spawn_camera)
-        .add_system(reset_clicked)
-        .add_system(clear_totems)
-        .add_system(spawn_player)
-        .add_system(spawn_totem)
-        .add_system(spawn_ui)
-        .add_system(spawn_powerup)
-        .add_system(player_invulnerable_blink)
-        .add_system(move_all_players)
-        .add_system(player_shoot)
-        .add_system(move_all_bullets)
-        .add_system(collision_player)
-        .add_system(collision_bullet)
-        .add_system(collision_powerup)
-        .add_system(collision_explosion)
-        .add_system(tick_timer)
-        .add_system(animate_sprite)
-        .add_system(update_ui)
+        // happens once
+        .add_systems(
+            Startup,
+            (
+                spawn_walls,
+                spawn_level_1,
+                spawn_camera,
+                spawn_ui,
+                spawn_player,
+            )
+                .chain(),
+        )
+        // happens severy frame
+        .add_systems(
+            FixedUpdate,
+            (
+                collision_player,
+                collision_bullet,
+                collision_powerup,
+                collision_explosion,
+                move_all_bullets,
+            )
+                .chain(),
+        )
+        .add_systems(
+            Update,
+            (
+                reset_clicked,
+                clear_totems,
+                spawn_player,
+                spawn_totem,
+                reset_powerup,
+                spawn_ui,
+                spawn_powerup,
+                player_invulnerable_blink,
+                move_all_players,
+                player_shoot,
+                tick_timer,
+                animate_sprite,
+                update_ui,
+            )
+                .chain(),
+        )
         .run();
 }
 
@@ -72,9 +103,23 @@ fn clear_totems(
     totems: Query<Entity, With<Totem>>,
     mut event_reader: EventReader<ResetGameEvent>,
 ) {
-    for _ in event_reader.iter() {
+    for _ in event_reader.read() {
         for entity in &totems {
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn reset_powerup(
+    mut commands: Commands,
+    powerups: Query<Entity, With<PowerUp>>,
+    mut event_reader: EventReader<ResetGameEvent>,
+    mut event_writer: EventWriter<PlayerPowerUpEvent>,
+) {
+    for _ in event_reader.read() {
+        for entity in &powerups {
+            commands.entity(entity).despawn();
+            event_writer.send_default();
         }
     }
 }
@@ -85,7 +130,7 @@ fn spawn_player(
     asset_server: Res<AssetServer>,
     mut event_reader: EventReader<ResetGameEvent>,
 ) {
-    for _ in event_reader.iter() {
+    for _ in event_reader.read() {
         for entity in &existing_players {
             commands.entity(entity).despawn();
         }
@@ -93,8 +138,8 @@ fn spawn_player(
             Player::new(
                 1,
                 String::from("player1"),
-                KeyCode::LControl,
-                KeyCode::LShift,
+                KeyCode::ControlLeft,
+                KeyCode::ShiftLeft,
                 KeyCode::W,
                 KeyCode::S,
                 KeyCode::D,
@@ -109,12 +154,12 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_right.png"),
+                texture: asset_server.load("../assets/images/player/player_right.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
                         y: 350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -133,8 +178,8 @@ fn spawn_player(
             Player::new(
                 2,
                 String::from("player2"),
-                KeyCode::RControl,
-                KeyCode::RShift,
+                KeyCode::ControlRight,
+                KeyCode::ShiftRight,
                 KeyCode::Up,
                 KeyCode::Down,
                 KeyCode::Right,
@@ -149,12 +194,12 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_left.png"),
+                texture: asset_server.load("../assets/images/player/player_left.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
                         y: 350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -189,12 +234,12 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_right.png"),
+                texture: asset_server.load("../assets/images/player/player_right.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: -700.0,
                         y: -350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -229,12 +274,12 @@ fn spawn_player(
                     custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                texture: asset_server.load("../assets/player_left.png"),
+                texture: asset_server.load("../assets/images/player/player_left.png"),
                 transform: Transform {
                     translation: Vec3 {
                         x: 700.0,
                         y: -350.0,
-                        z: 0.0,
+                        z: 2.0,
                     },
                     scale: Vec3 {
                         x: PLAYER_SIZE,
@@ -252,23 +297,24 @@ fn spawn_player(
     }
 }
 
-fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>, timer: Res<Time>) {
+fn move_all_bullets(mut bullets: Query<(&Bullet, &mut Transform)>) {
+    //, timer: Res<Time>) {
     for (bullet, mut transform) in &mut bullets {
         match bullet.direction.direction_y {
             Direction::Up => {
-                transform.translation.y += 50. * bullet.speed * timer.delta_seconds();
+                transform.translation.y += bullet.speed; //* timer.delta_seconds();
             }
             Direction::Down => {
-                transform.translation.y -= 50. * bullet.speed * timer.delta_seconds();
+                transform.translation.y -= bullet.speed; //* timer.delta_seconds();
             }
             _ => (),
         }
         match bullet.direction.direction_x {
             Direction::Right => {
-                transform.translation.x += 50. * bullet.speed * timer.delta_seconds();
+                transform.translation.x += bullet.speed; //* timer.delta_seconds();
             }
             Direction::Left => {
-                transform.translation.x -= 50. * bullet.speed * timer.delta_seconds();
+                transform.translation.x -= bullet.speed; //* timer.delta_seconds();
             }
             _ => (),
         }
@@ -289,7 +335,10 @@ fn tick_timer(
                 match hit_timer.timer_type {
                     TimerType::Stun => {
                         player.stunned = false;
-                        *player_sprite = asset_server.load(player.get_direction_sprite());
+                        *player_sprite = asset_server.load(get_direction_sprite(
+                            &player.direction.direction_x,
+                            &player.direction.direction_y,
+                        ));
                         commands.entity(entity).despawn();
                     }
                     TimerType::Invulnerable => {
@@ -367,7 +416,7 @@ fn player_invulnerable_blink(
             }
         }
     }
-    for _ in event_reader.iter() {
+    for _ in event_reader.read() {
         for (mut sprite, player) in &mut players {
             if !player.invulnerable {
                 continue;
@@ -389,13 +438,13 @@ fn move_all_players(
     asset_server: Res<AssetServer>,
 ) {
     for (mut player, mut transform, mut player_sprite) in &mut players {
-        if player.stunned == false {
+        if !player.stunned {
             if keys.pressed(player.bindings.up)
                 && keys.pressed(player.bindings.right)
                 && !player.direction_block.up
                 && !player.direction_block.right
             {
-                *player_sprite = asset_server.load("../assets/player_right_up.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_right_up.png");
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -409,7 +458,7 @@ fn move_all_players(
                 && !player.direction_block.up
                 && !player.direction_block.left
             {
-                *player_sprite = asset_server.load("../assets/player_left_up.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_left_up.png");
                 let new_position_y =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -423,7 +472,7 @@ fn move_all_players(
                 && !player.direction_block.down
                 && !player.direction_block.right
             {
-                *player_sprite = asset_server.load("../assets/player_right_down.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_right_down.png");
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -437,7 +486,7 @@ fn move_all_players(
                 && !player.direction_block.down
                 && !player.direction_block.left
             {
-                *player_sprite = asset_server.load("../assets/player_left_down.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_left_down.png");
                 let new_position_y =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 let new_position_x =
@@ -447,28 +496,28 @@ fn move_all_players(
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::Left;
             } else if keys.pressed(player.bindings.up) && !player.direction_block.up {
-                *player_sprite = asset_server.load("../assets/player_up.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_up.png");
                 let new_position =
                     transform.translation.y + 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Up;
                 player.direction.direction_x = Direction::None;
             } else if keys.pressed(player.bindings.down) && !player.direction_block.down {
-                *player_sprite = asset_server.load("../assets/player_down.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_down.png");
                 let new_position =
                     transform.translation.y - 80. * player.speed * timer.delta_seconds();
                 transform.translation.y = new_position.clamp(TOP_BOUND, BOTTOM_BOUND);
                 player.direction.direction_y = Direction::Down;
                 player.direction.direction_x = Direction::None;
             } else if keys.pressed(player.bindings.right) && !player.direction_block.right {
-                *player_sprite = asset_server.load("../assets/player_right.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_right.png");
                 let new_position =
                     transform.translation.x + 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
                 player.direction.direction_x = Direction::Right;
                 player.direction.direction_y = Direction::None;
             } else if keys.pressed(player.bindings.left) && !player.direction_block.left {
-                *player_sprite = asset_server.load("../assets/player_left.png");
+                *player_sprite = asset_server.load("../assets/images/player/player_left.png");
                 let new_position =
                     transform.translation.x - 80. * player.speed * timer.delta_seconds();
                 transform.translation.x = new_position.clamp(LEFT_BOUND, RIGHT_BOUND);
@@ -485,7 +534,7 @@ fn spawn_totem(
     asset_server: ResMut<AssetServer>,
     mut event_reader: EventReader<PlayerDeadEvent>,
 ) {
-    for _ in event_reader.iter() {
+    for _ in event_reader.read() {
         for (entity, transform, player) in players.iter() {
             if player.lifes > 0 {
                 continue;
@@ -498,10 +547,14 @@ fn spawn_totem(
                         custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                         ..default()
                     },
-                    texture: asset_server.load("../assets/dead.png"),
+                    texture: asset_server.load("../assets/images/dead.png"),
                     transform: Transform {
-                        translation: transform.translation,
-                        scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 1.0),
+                        translation: Vec3 {
+                            x: transform.translation.x,
+                            y: transform.translation.y,
+                            z: 1.0,
+                        },
+                        scale: Vec3::new(PLAYER_SIZE, PLAYER_SIZE, 0.0),
                         ..default()
                     },
                     ..default()
@@ -529,18 +582,18 @@ fn player_shoot(
                         custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                         ..default()
                     },
-                    texture: asset_server.load("../assets/bullet.png"),
+                    texture: asset_server.load("../assets/images/bullet.png"),
                     transform: Transform {
                         translation: transform.translation
                             + Vec3 {
                                 x: bullet_x,
                                 y: bullet_y,
-                                z: 0.0,
+                                z: 2.0,
                             },
                         scale: Vec3 {
                             x: 30.0,
                             y: 30.0,
-                            z: 1.0,
+                            z: 0.0,
                         },
                         ..default()
                     },
@@ -552,6 +605,10 @@ fn player_shoot(
                 associated_player: player.name.clone(),
                 timer_type: TimerType::Shoot,
             },));
+            commands.spawn(AudioBundle {
+                source: asset_server.load("../assets/sounds/shot.wav"),
+                ..default()
+            });
         }
         if keys.just_pressed(player.bindings.shoot_special) && !player.stunned && player.powerup {
             let (bullet_x, bullet_y) = player.get_bullet_spawn_position();
@@ -563,16 +620,20 @@ fn player_shoot(
                         ..default()
                     },
                     texture: match player.power_up_type.clone().unwrap() {
-                        BulletType::IceBullet => asset_server.load("../assets/freezing_bullet.png"),
-                        BulletType::ExplosiveBullet => asset_server.load("../assets/granate.png"),
-                        _ => asset_server.load("../assets/bouncy_ball.png"),
+                        BulletType::IceBullet => {
+                            asset_server.load("../assets/images/freezing_bullet.png")
+                        }
+                        BulletType::ExplosiveBullet => {
+                            asset_server.load("../assets/images/granate.png")
+                        }
+                        _ => asset_server.load("../assets/images/bouncy_ball.png"),
                     },
                     transform: Transform {
                         translation: transform.translation
                             + Vec3 {
                                 x: bullet_x,
                                 y: bullet_y,
-                                z: 0.0,
+                                z: 2.0,
                             },
                         scale: Vec3 {
                             x: 30.0,
@@ -589,6 +650,10 @@ fn player_shoot(
             event_writer.send(UpdateUIEvent {
                 player_number: player.player_number as usize,
             });
+            commands.spawn(AudioBundle {
+                source: asset_server.load("../assets/sounds/shot.wav"),
+                ..default()
+            });
         }
     }
 }
@@ -596,66 +661,60 @@ fn player_shoot(
 fn spawn_powerup(
     mut commands: Commands,
     asset_server: ResMut<AssetServer>,
-    power_up_query: Query<Entity, With<PowerUp>>,
     collision_query: Query<&Transform, With<Collider>>,
     mut event_reader: EventReader<PlayerPowerUpEvent>,
 ) {
-    for _ in event_reader.iter() {
-        let mut count = 0;
-        for _entity in &power_up_query {
-            count += 1;
-        }
-        while count < 2 {
-            let mut powerup_transform = Transform { ..default() };
-            loop {
-                let mut collided = false;
-                powerup_transform.translation = PowerUp::generate_random_position();
-                powerup_transform.scale = Vec3 {
-                    x: 40.0,
-                    y: 40.0,
-                    z: 0.0,
-                };
-                for transform in &collision_query {
-                    let collision = collide(
-                        transform.translation,
-                        transform.scale.truncate(),
-                        powerup_transform.translation,
-                        powerup_transform.scale.truncate(),
-                    );
-                    if collision.is_some() {
-                        collided = true;
-                        break;
-                    }
-                }
-                if !collided {
+    info!("spawn powerup");
+    for _ in event_reader.read() {
+        let mut powerup_transform = Transform { ..default() };
+        loop {
+            let mut collided = false;
+            powerup_transform.translation = PowerUp::generate_random_position();
+            powerup_transform.scale = Vec3 {
+                x: 40.0,
+                y: 40.0,
+                z: 0.0,
+            };
+            for transform in &collision_query {
+                let collision = collide(
+                    transform.translation,
+                    transform.scale.truncate(),
+                    powerup_transform.translation,
+                    powerup_transform.scale.truncate(),
+                );
+                if collision.is_some() {
+                    collided = true;
                     break;
                 }
             }
-            commands.spawn((
-                PowerUp {
-                    pickup_type: BulletType::IceBullet,
-                },
-                SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
-                        ..default()
-                    },
-                    texture: asset_server.load("../assets/coin.png"),
-                    transform: powerup_transform,
+            if !collided {
+                break;
+            }
+        }
+        commands.spawn((
+            PowerUp {
+                pickup_type: BulletType::IceBullet,
+            },
+            SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
                 },
-                Collider,
-            ));
-            count += 1;
-        }
+                texture: asset_server.load("../assets/images/coin.png"),
+                transform: powerup_transform,
+                ..default()
+            },
+            Collider,
+        ));
     }
 }
 
-fn spawn_walls(mut commands: Commands) {
-    commands.spawn(WallBundle::new(Direction::Up));
-    commands.spawn(WallBundle::new(Direction::Down));
-    commands.spawn(WallBundle::new(Direction::Right));
-    commands.spawn(WallBundle::new(Direction::Left));
+fn spawn_walls(mut commands: Commands, asset_server: Res<AssetServer>) {
+    info!("spawn walls");
+    commands.spawn(WallBundle::new(Direction::Up, &asset_server));
+    commands.spawn(WallBundle::new(Direction::Down, &asset_server));
+    commands.spawn(WallBundle::new(Direction::Right, &asset_server));
+    commands.spawn(WallBundle::new(Direction::Left, &asset_server));
 }
 
 fn spawn_ui(
@@ -664,7 +723,8 @@ fn spawn_ui(
     mut event_reader: EventReader<ResetGameEvent>,
     existing_node: Query<Entity, With<UINode>>,
 ) {
-    for _ in event_reader.iter() {
+    info!("spawn ui");
+    for _ in event_reader.read() {
         for entity in &existing_node {
             commands.entity(entity).despawn_recursive();
         }
@@ -672,11 +732,11 @@ fn spawn_ui(
             .spawn((
                 NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Px(150.0), Val::Percent(100.0)),
+                        // size: Size::new(Val::Px(150.0), Val::Percent(100.0)),
                         border: UiRect::all(Val::Px(2.0)),
                         flex_direction: FlexDirection::Column,
                         flex_wrap: FlexWrap::NoWrap,
-                        overflow: Overflow::Visible,
+                        overflow: Overflow::DEFAULT,
                         ..default()
                     },
                     background_color: Color::rgba(0.0, 0.0, 0.0, 0.0).into(),
@@ -686,37 +746,61 @@ fn spawn_ui(
             ))
             .with_children(|parent| {
                 for n in 1..5 {
-                    parent.spawn((
-                        TextBundle::from_section(
-                            format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
-                            TextStyle {
-                                font: asset_server.load("fonts/font.ttf"),
-                                font_size: 30.0,
-                                color: Color::WHITE,
+                    parent
+                        .spawn(ImageBundle {
+                            style: Style {
+                                // size: Size::new(Val::Px(144.0), Val::Px(108.0)),
+                                padding: UiRect {
+                                    left: Val::Px(20.0),
+                                    right: Val::Px(20.0),
+                                    top: Val::Px(10.0),
+                                    bottom: Val::Px(10.0),
+                                },
+                                ..default()
                             },
-                        )
-                        .with_style(Style {
-                            margin: UiRect::all(Val::Px(1.0)),
+                            image: asset_server.load("../assets/images/hud_64_48.png").into(),
                             ..default()
-                        }),
-                        UIText {},
-                    ));
+                        })
+                        .with_children(|subparent| {
+                            subparent.spawn((
+                                TextBundle::from_section(
+                                    format!("Player {}\nLifes: 3\nSpecial:\nNone\n\n", n),
+                                    TextStyle {
+                                        font: asset_server.load("fonts/PixeloidSans.ttf"),
+                                        font_size: 20.0,
+                                        color: Color::WHITE,
+                                    },
+                                )
+                                .with_style(Style {
+                                    margin: UiRect::all(Val::Px(1.0)),
+                                    ..default()
+                                }),
+                                UIText {},
+                            ));
+                        });
                 }
                 parent
                     .spawn(ButtonBundle {
                         style: Style {
-                            size: Size::new(Val::Px(100.0), Val::Px(60.0)),
+                            // size: Size::new(Val::Px(128.0), Val::Px(64.0)),
                             margin: UiRect::all(Val::Px(8.0)),
+                            padding: UiRect {
+                                left: Val::Px(17.0),
+                                right: Val::Px(17.0),
+                                top: Val::Px(15.0),
+                                bottom: Val::Px(15.0),
+                            },
+                            justify_content: JustifyContent::Center,
                             ..default()
                         },
-                        background_color: Color::rgb(0.3, 0.3, 0.3).into(),
+                        image: asset_server.load("../assets/images/hud_64_32.png").into(),
                         ..default()
                     })
                     .with_children(|subparent| {
                         subparent.spawn(TextBundle::from_section(
                             "Reset",
                             TextStyle {
-                                font: asset_server.load("fonts/font.ttf"),
+                                font: asset_server.load("fonts/PixeloidSans.ttf"),
                                 font_size: 30.0,
                                 color: Color::WHITE,
                             },
@@ -733,22 +817,21 @@ fn update_ui(
     mut event_reader_hit: EventReader<UpdateUIEvent>,
     mut player_dead_event_writer: EventWriter<PlayerDeadEvent>,
 ) {
-    for event in event_reader_hit.iter() {
-        let mut count = 0;
+    info!("update ui");
+    for event in event_reader_hit.read() {
         let mut text_nodes = text_query.iter_mut();
         for player in &player_query {
             if player.player_number as usize != event.player_number {
-                count += 1;
                 continue;
             }
-            let mut maybe_node = text_nodes.nth(count);
+            let mut maybe_node = text_nodes.nth(event.player_number - 1);
             let text_node = &mut **maybe_node.as_mut().unwrap();
             if player.lifes < 1 {
                 *text_node = Text::from_section(
                     "",
                     TextStyle {
-                        font: asset_server.load("fonts/font.ttf"),
-                        font_size: 30.0,
+                        font: asset_server.load("fonts/PixeloidSans.ttf"),
+                        font_size: 20.0,
                         color: Color::WHITE,
                     },
                 );
@@ -765,8 +848,8 @@ fn update_ui(
                     player.player_number, player.lifes, powerup
                 ),
                 TextStyle {
-                    font: asset_server.load("fonts/font.ttf"),
-                    font_size: 30.0,
+                    font: asset_server.load("fonts/PixeloidSans.ttf"),
+                    font_size: 20.0,
                     color: Color::WHITE,
                 },
             );
@@ -779,9 +862,11 @@ fn reset_clicked(
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<Button>)>,
     mut event_writer: EventWriter<ResetGameEvent>,
 ) {
+    info!("reset clicked");
     for interaction in &interaction_query {
+        #[allow(clippy::single_match)]
         match *interaction {
-            Interaction::Clicked => {
+            Interaction::Pressed => {
                 event_writer.send_default();
             }
             _ => (),
@@ -790,5 +875,6 @@ fn reset_clicked(
 }
 
 fn spawn_camera(mut commands: Commands) {
+    info!("spawn camera");
     commands.spawn(Camera2dBundle::default());
 }

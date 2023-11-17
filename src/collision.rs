@@ -1,4 +1,4 @@
-use crate::game_objects::{Bullet, Explosion, Player, PowerUp};
+use crate::game_objects::{get_direction_sprite, Bullet, Explosion, Player, PowerUp};
 use crate::game_utils::{
     AnimationTimer, BulletType, Collider, DirectionHelper, HitCooldownTimer, PlayerHitEvent,
     PlayerPowerUpEvent, TimerType, UpdateUIEvent,
@@ -28,7 +28,10 @@ pub fn collision_explosion(
                 player_transform.scale.truncate(),
             );
             if collision.is_some() {
-                *player_sprite = asset_server.load(player.get_direction_sprite());
+                *player_sprite = asset_server.load(get_direction_sprite(
+                    &player.direction.direction_x,
+                    &player.direction.direction_y,
+                ));
                 player.lifes -= 2;
                 event_writer.send(UpdateUIEvent {
                     player_number: player.player_number as usize,
@@ -53,6 +56,7 @@ pub fn collision_powerup(
     mut collider_query: Query<(Entity, &Transform, &PowerUp), With<Collider>>,
     mut event_writer: EventWriter<UpdateUIEvent>,
     mut event_writer_powerup: EventWriter<PlayerPowerUpEvent>,
+    asset_server: ResMut<AssetServer>,
 ) {
     for (player_transform, mut player) in &mut player_query {
         for (collider_entity, transform, _maybe_powerup) in &mut collider_query {
@@ -72,11 +76,17 @@ pub fn collision_powerup(
                     player_number: player.player_number as usize,
                 });
                 event_writer_powerup.send_default();
+
+                commands.spawn(AudioBundle {
+                    source: asset_server.load("../assets/sounds/powerup.wav"),
+                    ..default()
+                });
             }
         }
     }
 }
 
+#[allow(clippy::type_complexity)]
 pub fn collision_player(
     collider_query: Query<
         &Transform,
@@ -95,14 +105,12 @@ pub fn collision_player(
         let mut b_was_collision_right = false;
         let mut b_was_collision_left = false;
         for transform in collider_query.iter() {
-            let collision = collide(
+            if let Some(direction) = collide(
                 transform.translation,
                 transform.scale.truncate(),
                 player_transform.translation,
                 player_transform.scale.truncate() + 1.15,
-            );
-            if collision.is_some() {
-                let direction = collision.unwrap();
+            ) {
                 match direction {
                     Collision::Right => {
                         player.direction_block.right = true;
@@ -139,6 +147,8 @@ pub fn collision_player(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::type_complexity)]
 pub fn collision_bullet(
     mut commands: Commands,
     mut bullet_query: Query<(Entity, &Transform, &mut Bullet)>,
@@ -154,56 +164,77 @@ pub fn collision_bullet(
     for (bullet_entity, bullet_transform, mut bullet) in &mut bullet_query {
         let bullet_size = bullet_transform.scale.truncate();
         for (transform, mut player_sprite, mut maybe_player) in &mut collider_query {
-            let collision = collide(
+            if let Some(collision) = collide(
                 bullet_transform.translation,
                 bullet_size,
                 transform.translation,
                 transform.scale.truncate(),
-            );
-            if collision.is_some() {
+            ) {
                 match bullet.bullet_type {
                     BulletType::NormalBullet => {
                         commands.entity(bullet_entity).despawn();
-                        if maybe_player.is_some() {
-                            let player = &mut **maybe_player.as_mut().unwrap();
-                            if player.invulnerable == false {
-                                player.decrement_life();
-                                event_writer.send(UpdateUIEvent {
-                                    player_number: player.player_number as usize,
-                                });
-                                if player.lifes > 0 {
-                                    event_writer_player_hit.send_default();
-                                    player.stunned = false;
-                                    *player_sprite =
-                                        asset_server.load(player.get_direction_sprite());
-                                    player.invulnerable = true;
-                                    commands.spawn((HitCooldownTimer {
-                                        timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
-                                        associated_player: player.name.clone(),
-                                        timer_type: TimerType::Invulnerable,
-                                    },));
-                                }
+                        if maybe_player.is_none() {
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                ..default()
+                            });
+                            continue;
+                        }
+                        let player = &mut **maybe_player.as_mut().unwrap();
+                        if !player.invulnerable {
+                            player.decrement_life();
+                            event_writer.send(UpdateUIEvent {
+                                player_number: player.player_number as usize,
+                            });
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/hit.wav"),
+                                ..default()
+                            });
+                            if player.lifes > 0 {
+                                event_writer_player_hit.send_default();
+                                player.stunned = false;
+                                *player_sprite = asset_server.load(get_direction_sprite(
+                                    &player.direction.direction_x,
+                                    &player.direction.direction_y,
+                                ));
+                                player.invulnerable = true;
+                                commands.spawn((HitCooldownTimer {
+                                    timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                    associated_player: player.name.clone(),
+                                    timer_type: TimerType::Invulnerable,
+                                },));
                             }
                         }
                     }
                     BulletType::IceBullet => {
                         commands.entity(bullet_entity).despawn();
-                        if maybe_player.is_some() {
-                            let player = &mut **maybe_player.as_mut().unwrap();
-                            if player.invulnerable == false && player.stunned == false {
-                                player.stunned = true;
-                                *player_sprite = asset_server.load("../assets/player_frozen.png");
-                                commands.spawn((HitCooldownTimer {
-                                    timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
-                                    associated_player: player.name.clone(),
-                                    timer_type: TimerType::Stun,
-                                },));
-                            }
+                        if maybe_player.is_none() {
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                ..default()
+                            });
+                            continue;
+                        }
+                        let player = &mut **maybe_player.as_mut().unwrap();
+                        if !player.invulnerable && !player.stunned {
+                            player.stunned = true;
+                            *player_sprite =
+                                asset_server.load("../assets/images/player/player_frozen.png");
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/frozen.wav"),
+                                ..default()
+                            });
+                            commands.spawn((HitCooldownTimer {
+                                timer: Timer::new(Duration::from_secs(2), TimerMode::Once),
+                                associated_player: player.name.clone(),
+                                timer_type: TimerType::Stun,
+                            },));
                         }
                     }
                     BulletType::ExplosiveBullet => {
                         commands.entity(bullet_entity).despawn();
-                        let texture_handle = asset_server.load("../assets/explosion_anim.png");
+                        let texture_handle =
+                            asset_server.load("../assets/images/explosion_anim.png");
                         let texture_atlas = TextureAtlas::from_grid(
                             texture_handle,
                             Vec2::new(32.0, 32.0),
@@ -213,6 +244,10 @@ pub fn collision_bullet(
                             None,
                         );
                         let texture_atlas_handle = texture_atlases.add(texture_atlas);
+                        commands.spawn(AudioBundle {
+                            source: asset_server.load("../assets/sounds/explosion.wav"),
+                            ..default()
+                        });
                         commands.spawn((
                             SpriteSheetBundle {
                                 sprite: TextureAtlasSprite {
@@ -240,8 +275,7 @@ pub fn collision_bullet(
                         ));
                     }
                     BulletType::BouncyBullet => {
-                        let direction_collision = collision.unwrap();
-                        bullet.direction = match direction_collision {
+                        bullet.direction = match collision {
                             Collision::Left | Collision::Right => DirectionHelper {
                                 direction_x: bullet.direction.direction_x.opposite(),
                                 direction_y: bullet.direction.direction_y.clone(),
@@ -252,21 +286,36 @@ pub fn collision_bullet(
                             },
                         };
                         bullet.bounces_left -= 1;
-                        if bullet.bounces_left < 1 {
-                            commands.entity(bullet_entity).despawn();
-                            continue;
-                        }
-                        if !maybe_player.is_some() {
+                        if maybe_player.is_none() {
+                            if bullet.bounces_left < 1 {
+                                commands.entity(bullet_entity).despawn();
+                                commands.spawn(AudioBundle {
+                                    source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                    ..default()
+                                });
+                                continue;
+                            }
+                            commands.spawn(AudioBundle {
+                                source: asset_server.load("../assets/sounds/bouncywall.wav"),
+                                ..default()
+                            });
                             continue;
                         }
                         let player = &mut **maybe_player.as_mut().unwrap();
-                        *player_sprite = asset_server.load(player.get_direction_sprite());
+                        *player_sprite = asset_server.load(get_direction_sprite(
+                            &player.direction.direction_x,
+                            &player.direction.direction_y,
+                        ));
                         if player.invulnerable {
                             continue;
                         }
                         player.decrement_life();
                         event_writer.send(UpdateUIEvent {
                             player_number: player.player_number as usize,
+                        });
+                        commands.spawn(AudioBundle {
+                            source: asset_server.load("../assets/sounds/hit.wav"),
+                            ..default()
                         });
                         if player.lifes > 0 {
                             event_writer_player_hit.send_default();

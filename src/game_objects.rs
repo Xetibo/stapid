@@ -1,12 +1,11 @@
 use crate::Collider;
 use bevy::prelude::*;
-use bevy_inspector_egui::Inspectable;
 
 use crate::constants::{WALL_BOTTOM, WALL_LEFT, WALL_RIGHT, WALL_THICKNESS, WALL_TOP};
 use crate::game_utils::{Bindings, BulletType, Direction, DirectionBlock, DirectionHelper};
 use rand::prelude::*;
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Player {
     pub player_number: i32,
     pub size: i32,
@@ -23,7 +22,7 @@ pub struct Player {
     pub power_up_type: Option<BulletType>,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Bullet {
     pub bullet_type: BulletType,
     pub speed: f32,
@@ -35,12 +34,12 @@ pub struct Bullet {
     pub color: Color,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Explosion {
     pub radius: f32,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct PowerUp {
     pub pickup_type: BulletType,
 }
@@ -56,7 +55,7 @@ pub struct WallBundle {
 #[derive(Component)]
 pub struct Totem {}
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Wall {}
 
 #[derive(Component)]
@@ -66,6 +65,7 @@ pub struct UINode {}
 pub struct UIText {}
 
 impl Player {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         number: i32,
         entered_name: String,
@@ -112,38 +112,38 @@ impl Player {
 
     pub fn get_bullet_spawn_position(&self) -> (f32, f32) {
         let bullet_x = match self.direction.direction_x {
-            Direction::Right => 41.0,
-            Direction::Left => -41.0,
+            Direction::Right => 43.0,
+            Direction::Left => -43.0,
             _ => 0.0,
         };
         let bullet_y = match self.direction.direction_y {
-            Direction::Up => 41.0,
-            Direction::Down => -41.0,
+            Direction::Up => 43.0,
+            Direction::Down => -43.0,
             _ => 0.0,
         };
         (bullet_x, bullet_y)
     }
 
-    pub fn get_direction_sprite(&self) -> &str {
-        match &self.direction.direction_x {
-            Direction::Right => match &self.direction.direction_y {
-                Direction::Up => "../assets/player_right_up.png",
-                Direction::Down => "../assets/player_right_down.png",
-                _ => "../assets/player_right.png",
+}
+    pub fn get_direction_sprite(x: &Direction, y: &Direction) -> &'static str {
+        match x {
+            Direction::Right => match y {
+                Direction::Up => "../assets/images/player/player_right_up.png",
+                Direction::Down => "../assets/images/player/player_right_down.png",
+                _ => "../assets/images/player/player_right.png",
             },
-            Direction::Left => match &self.direction.direction_y {
-                Direction::Up => "../assets/player_left_up.png",
-                Direction::Down => "../assets/player_left_down.png",
-                _ => "../assets/player_left.png",
+            Direction::Left => match y {
+                Direction::Up => "../assets/images/player/player_left_up.png",
+                Direction::Down => "../assets/images/player/player_left_down.png",
+                _ => "../assets/images/player/player_left.png",
             },
-            _ => match &self.direction.direction_y {
-                Direction::Up => "../assets/player_up.png",
-                Direction::Down => "../assets/player_down.png",
+            _ => match y {
+                Direction::Up => "../assets/images/player/player_up.png",
+                Direction::Down => "../assets/images/player/player_down.png",
                 _ => "",
             },
         }
     }
-}
 
 impl Bullet {
     pub fn bullet_from_enum(
@@ -151,19 +151,17 @@ impl Bullet {
         direction: &DirectionHelper,
     ) -> Bullet {
         match entered_bullet_type.unwrap() {
-            bullet_type => match bullet_type {
-                BulletType::NormalBullet => Self::normal_bullet(direction.clone()),
-                BulletType::IceBullet => Self::ice_bullet(direction.clone()),
-                BulletType::ExplosiveBullet => Self::explosive_bullet(direction.clone()),
-                BulletType::BouncyBullet => Self::bouncy_bullet(direction.clone()),
-            },
+            BulletType::NormalBullet => Self::normal_bullet(direction.clone()),
+            BulletType::IceBullet => Self::ice_bullet(direction.clone()),
+            BulletType::ExplosiveBullet => Self::explosive_bullet(direction.clone()),
+            BulletType::BouncyBullet => Self::bouncy_bullet(direction.clone()),
         }
     }
 
     pub fn normal_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::NormalBullet,
-            speed: 10.0,
+            speed: 20.0,
             area_of_effect: 1.0,
             stuns: false,
             bounces: false,
@@ -176,7 +174,7 @@ impl Bullet {
     pub fn ice_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::IceBullet,
-            speed: 20.0,
+            speed: 40.0,
             area_of_effect: 1.0,
             stuns: true,
             bounces: false,
@@ -189,7 +187,7 @@ impl Bullet {
     pub fn explosive_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::ExplosiveBullet,
-            speed: 6.0,
+            speed: 10.0,
             area_of_effect: 5.0,
             stuns: false,
             bounces: false,
@@ -202,7 +200,7 @@ impl Bullet {
     pub fn bouncy_bullet(direction_entered: DirectionHelper) -> Bullet {
         Bullet {
             bullet_type: BulletType::BouncyBullet,
-            speed: 15.0,
+            speed: 20.0,
             area_of_effect: 1.0,
             stuns: false,
             bounces: true,
@@ -219,13 +217,13 @@ impl PowerUp {
         Vec3 {
             x: rng.gen_range((WALL_LEFT + 15.0)..=(WALL_RIGHT - 15.0)),
             y: rng.gen_range((WALL_TOP + 15.0)..=(WALL_BOTTOM - 15.0)),
-            z: 0.0,
+            z: 2.0,
         }
     }
 }
 
 impl WallBundle {
-    pub fn new(entered_direction: Direction) -> WallBundle {
+    pub fn new(entered_direction: Direction, asset_server: &Res<AssetServer>) -> WallBundle {
         WallBundle {
             direction: entered_direction.clone(),
             sprite_bundle: SpriteBundle {
@@ -234,39 +232,39 @@ impl WallBundle {
                         Direction::Up => Vec3 {
                             x: 0.0,
                             y: WALL_TOP,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::Down => Vec3 {
                             x: 0.0,
                             y: WALL_BOTTOM,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::Right => Vec3 {
                             x: WALL_RIGHT,
                             y: 0.0,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::Left => Vec3 {
                             x: WALL_LEFT,
                             y: 0.0,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         Direction::None => Vec3 {
                             x: 0.0,
                             y: 0.0,
-                            z: 0.0,
+                            z: 2.0,
                         },
                     },
                     scale: match entered_direction {
                         Direction::Up | Direction::Down => Vec3 {
-                            x: 1610.0,
+                            x: 1616.0,
                             y: WALL_THICKNESS,
-                            z: (1.0),
+                            z: (0.0),
                         },
                         Direction::Right | Direction::Left => Vec3 {
                             x: WALL_THICKNESS,
-                            y: 1010.0,
-                            z: (1.0),
+                            y: 984.0,
+                            z: (0.0),
                         },
                         Direction::None => Vec3 {
                             x: 0.0,
@@ -277,8 +275,14 @@ impl WallBundle {
                     ..default()
                 },
                 sprite: Sprite {
-                    color: Color::rgb(1.0, 0.0, 0.0),
+                    custom_size: Option::Some(Vec2 { x: 1.0, y: 1.0 }),
                     ..default()
+                },
+                texture: match entered_direction {
+                    Direction::Up | Direction::Down => {
+                        asset_server.load("../assets/images/walls/bricks_808_8.png")
+                    }
+                    _ => asset_server.load("../assets/images/walls/bricks_8_492_rotate.png"),
                 },
                 ..default()
             },
@@ -297,12 +301,12 @@ impl WallBundle {
                         translation: Vec3 {
                             x: rng.gen_range(-500..=500) as f32,
                             y: rng.gen_range(-400..=400) as f32,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         scale: Vec3 {
                             x: 500.0,
                             y: WALL_THICKNESS,
-                            z: (1.0),
+                            z: (0.0),
                         },
                         ..default()
                     },
@@ -321,12 +325,12 @@ impl WallBundle {
                         translation: Vec3 {
                             x: rng.gen_range(-500..=500) as f32,
                             y: rng.gen_range(-250..=250) as f32,
-                            z: (0.0),
+                            z: (2.0),
                         },
                         scale: Vec3 {
                             x: WALL_THICKNESS,
                             y: 500.0,
-                            z: (1.0),
+                            z: (0.0),
                         },
                         ..default()
                     },

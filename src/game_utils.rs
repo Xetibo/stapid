@@ -1,28 +1,27 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::Inspectable;
 use std::fmt;
 
-#[derive(Default)]
+#[derive(Default, Event)]
 pub struct ResetGameEvent {}
 
-#[derive(Default)]
+#[derive(Default, Event)]
 pub struct PlayerHitEvent {}
 
-#[derive(Default)]
+#[derive(Default, Event)]
 pub struct PlayerShootEvent {}
 
-#[derive(Default)]
+#[derive(Default, Event)]
 pub struct PlayerPowerUpEvent {}
 
-#[derive(Default)]
+#[derive(Default, Event)]
 pub struct UpdateUIEvent {
     pub player_number: usize,
 }
 
-#[derive(Default)]
+#[derive(Default, Event)]
 pub struct PlayerDeadEvent {}
 
-#[derive(Component, Inspectable, Clone)]
+#[derive(Component, Clone)]
 pub enum Direction {
     Up,
     Down,
@@ -42,13 +41,13 @@ impl Direction {
     }
 }
 
-#[derive(Component, Inspectable, Clone)]
+#[derive(Component, Clone)]
 pub struct DirectionHelper {
     pub direction_y: Direction,
     pub direction_x: Direction,
 }
 
-#[derive(Component, Inspectable, Clone)]
+#[derive(Component, Clone)]
 pub struct DirectionBlock {
     pub up: bool,
     pub down: bool,
@@ -56,7 +55,7 @@ pub struct DirectionBlock {
     pub left: bool,
 }
 
-#[derive(Component, Inspectable, Clone)]
+#[derive(Component, Clone)]
 pub enum BulletType {
     NormalBullet,
     IceBullet,
@@ -64,14 +63,14 @@ pub enum BulletType {
     BouncyBullet,
 }
 
-#[derive(Component, Inspectable, Clone)]
+#[derive(Component, Clone)]
 pub enum TimerType {
     Invulnerable,
     Stun,
     Shoot,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Name(String);
 impl Name {
     pub fn new(name: String) -> Self {
@@ -102,19 +101,13 @@ pub struct InvulnerableBlinkTimer {
     pub associated_player: String,
 }
 
-#[derive(Component, Inspectable)]
+#[derive(Component)]
 pub struct Bindings {
-    #[inspectable(ignore)]
     pub shoot: KeyCode,
-    #[inspectable(ignore)]
     pub shoot_special: KeyCode,
-    #[inspectable(ignore)]
     pub up: KeyCode,
-    #[inspectable(ignore)]
     pub down: KeyCode,
-    #[inspectable(ignore)]
     pub right: KeyCode,
-    #[inspectable(ignore)]
     pub left: KeyCode,
 }
 
