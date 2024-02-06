@@ -128,18 +128,18 @@ impl Player {
     pub fn get_direction_sprite(x: &Direction, y: &Direction) -> &'static str {
         match x {
             Direction::Right => match y {
-                Direction::Up => "../assets/images/player/player_right_up.png",
-                Direction::Down => "../assets/images/player/player_right_down.png",
-                _ => "../assets/images/player/player_right.png",
+                Direction::Up => "/assets/images/player/player_right_up.png",
+                Direction::Down => "/assets/images/player/player_right_down.png",
+                _ => "/assets/images/player/player_right.png",
             },
             Direction::Left => match y {
-                Direction::Up => "../assets/images/player/player_left_up.png",
-                Direction::Down => "../assets/images/player/player_left_down.png",
-                _ => "../assets/images/player/player_left.png",
+                Direction::Up => "/assets/images/player/player_left_up.png",
+                Direction::Down => "/assets/images/player/player_left_down.png",
+                _ => "/assets/images/player/player_left.png",
             },
             _ => match y {
-                Direction::Up => "../assets/images/player/player_up.png",
-                Direction::Down => "../assets/images/player/player_down.png",
+                Direction::Up => "/assets/images/player/player_up.png",
+                Direction::Down => "/assets/images/player/player_down.png",
                 _ => "",
             },
         }
@@ -280,9 +280,9 @@ impl WallBundle {
                 },
                 texture: match entered_direction {
                     Direction::Up | Direction::Down => {
-                        asset_server.load("../assets/images/walls/bricks_808_8.png")
+                        asset_server.load("/assets/images/walls/bricks_808_8.png")
                     }
-                    _ => asset_server.load("../assets/images/walls/bricks_8_492_rotate.png"),
+                    _ => asset_server.load("/assets/images/walls/bricks_8_492_rotate.png"),
                 },
                 ..default()
             },
