@@ -78,7 +78,7 @@ pub fn collision_powerup(
                 event_writer_powerup.send_default();
 
                 commands.spawn(AudioBundle {
-                    source: asset_server.load("../assets/sounds/powerup.wav"),
+                    source: asset_server.load("/assets/sounds/powerup.wav"),
                     ..default()
                 });
             }
@@ -175,7 +175,7 @@ pub fn collision_bullet(
                         commands.entity(bullet_entity).despawn();
                         if maybe_player.is_none() {
                             commands.spawn(AudioBundle {
-                                source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                source: asset_server.load("/assets/sounds/hitwall.wav"),
                                 ..default()
                             });
                             continue;
@@ -187,7 +187,7 @@ pub fn collision_bullet(
                                 player_number: player.player_number as usize,
                             });
                             commands.spawn(AudioBundle {
-                                source: asset_server.load("../assets/sounds/hit.wav"),
+                                source: asset_server.load("/assets/sounds/hit.wav"),
                                 ..default()
                             });
                             if player.lifes > 0 {
@@ -210,7 +210,7 @@ pub fn collision_bullet(
                         commands.entity(bullet_entity).despawn();
                         if maybe_player.is_none() {
                             commands.spawn(AudioBundle {
-                                source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                source: asset_server.load("/assets/sounds/hitwall.wav"),
                                 ..default()
                             });
                             continue;
@@ -219,9 +219,9 @@ pub fn collision_bullet(
                         if !player.invulnerable && !player.stunned {
                             player.stunned = true;
                             *player_sprite =
-                                asset_server.load("../assets/images/player/player_frozen.png");
+                                asset_server.load("/assets/images/player/player_frozen.png");
                             commands.spawn(AudioBundle {
-                                source: asset_server.load("../assets/sounds/frozen.wav"),
+                                source: asset_server.load("/assets/sounds/frozen.wav"),
                                 ..default()
                             });
                             commands.spawn((HitCooldownTimer {
@@ -234,7 +234,7 @@ pub fn collision_bullet(
                     BulletType::ExplosiveBullet => {
                         commands.entity(bullet_entity).despawn();
                         let texture_handle =
-                            asset_server.load("../assets/images/explosion_anim.png");
+                            asset_server.load("/assets/images/explosion_anim.png");
                         let texture_atlas = TextureAtlas::from_grid(
                             texture_handle,
                             Vec2::new(32.0, 32.0),
@@ -245,7 +245,7 @@ pub fn collision_bullet(
                         );
                         let texture_atlas_handle = texture_atlases.add(texture_atlas);
                         commands.spawn(AudioBundle {
-                            source: asset_server.load("../assets/sounds/explosion.wav"),
+                            source: asset_server.load("/assets/sounds/explosion.wav"),
                             ..default()
                         });
                         commands.spawn((
@@ -290,13 +290,13 @@ pub fn collision_bullet(
                             if bullet.bounces_left < 1 {
                                 commands.entity(bullet_entity).despawn();
                                 commands.spawn(AudioBundle {
-                                    source: asset_server.load("../assets/sounds/hitwall.wav"),
+                                    source: asset_server.load("/assets/sounds/hitwall.wav"),
                                     ..default()
                                 });
                                 continue;
                             }
                             commands.spawn(AudioBundle {
-                                source: asset_server.load("../assets/sounds/bouncywall.wav"),
+                                source: asset_server.load("/assets/sounds/bouncywall.wav"),
                                 ..default()
                             });
                             continue;
@@ -314,7 +314,7 @@ pub fn collision_bullet(
                             player_number: player.player_number as usize,
                         });
                         commands.spawn(AudioBundle {
-                            source: asset_server.load("../assets/sounds/hit.wav"),
+                            source: asset_server.load("/assets/sounds/hit.wav"),
                             ..default()
                         });
                         if player.lifes > 0 {
